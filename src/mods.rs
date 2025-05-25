@@ -585,6 +585,7 @@ impl ModManager {
                 ModLoader::Forge => "forge",
                 ModLoader::Fabric => "fabric",
                 ModLoader::Quilt => "quilt",
+                ModLoader::NeoForge => "neoforge",
                 ModLoader::None => return "".to_string(),
             };
             facets.push(format!("[\"categories:{}\"]", loader_str));
@@ -663,6 +664,7 @@ impl ModManager {
                     "forge" => Some(ModLoader::Forge),
                     "fabric" => Some(ModLoader::Fabric),
                     "quilt" => Some(ModLoader::Quilt),
+                    "neoforge" => Some(ModLoader::NeoForge),
                     _ => None,
                 }
             })
@@ -747,7 +749,7 @@ impl ModManager {
         });
     }
 
-    pub async fn install_mod(&self, profile: &mut Profile, mod_result: &ModSearchResult, version: &ModVersionInfo, progress_callback: impl Fn(DownloadProgress) + Send + Sync + 'static) -> Result<()> {
+    pub async fn install_mod(&self, profile: &mut Profile, mod_result: &ModSearchResult, version: &ModVersionInfo, progress_callback: impl Fn(DownloadProgress) + Send + Sync + 'static + std::clone::Clone) -> Result<()> {
         info!("Installing mod {} version {} for profile {}", mod_result.name, version.version_number, profile.name);
 
         // Determine mods directory
@@ -866,6 +868,7 @@ impl ModManager {
                 ModLoader::Forge => FORGE_MODLOADER_ID,
                 ModLoader::Fabric => FABRIC_MODLOADER_ID,
                 ModLoader::Quilt => QUILT_MODLOADER_ID,
+                ModLoader::NeoForge => FORGE_MODLOADER_ID, // Using Forge ID for NeoForge as it's compatible
                 ModLoader::None => return Err(anyhow!("Cannot check for updates with no mod loader")),
             };
             query_params.push(("modLoaderType", class_id.to_string()));
@@ -901,6 +904,7 @@ impl ModManager {
                 ModLoader::Forge => "forge",
                 ModLoader::Fabric => "fabric",
                 ModLoader::Quilt => "quilt",
+                ModLoader::NeoForge => "neoforge",
                 ModLoader::None => return Err(anyhow!("Cannot check for updates with no mod loader")),
             };
             query_params.push(("loaders", format!("[\"{}\"]", loader_str)));

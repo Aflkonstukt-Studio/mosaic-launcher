@@ -472,28 +472,7 @@ pub fn build_login_view(
     });
     login_box.append(&offline_button);
 
-    // Add a "Continue without logging in" button
-    let continue_button = gtk::Button::with_label("Continue without logging in");
-    continue_button.add_css_class("pill");
-    continue_button.set_halign(gtk::Align::Center);
-    continue_button.set_margin_top(10);
-
-    // Connect the continue button click event
-    let stack_clone = stack.clone();
-    let toast_overlay_clone = toast_overlay.clone();
-    continue_button.connect_clicked(move |_| {
-        // Show a toast notification
-        let toast = adw::Toast::new("You can browse and download mods, but you'll need to sign in to play Minecraft");
-        toast_overlay_clone.add_toast(toast);
-        let stack_clone = stack_clone.clone();
-
-        glib::idle_add_local_once(move || {
-            info!("Switching to main view");
-            stack_clone.set_visible_child_name("main");
-            info!("Switch completed");
-        });
-    });
-    login_box.append(&continue_button);
+    // Note: "Continue without logging in" option removed - users should use offline mode instead
 
     // Add some space
     let spacer = gtk::Box::new(gtk::Orientation::Vertical, 0);

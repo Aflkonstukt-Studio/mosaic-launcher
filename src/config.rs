@@ -16,7 +16,7 @@ pub struct Game {
     pub game_type: GameType,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum GameType {
     Minecraft,
     Custom,
@@ -52,6 +52,7 @@ pub enum ModLoader {
     Forge,
     Fabric,
     Quilt,
+    NeoForge,
     None,
 }
 

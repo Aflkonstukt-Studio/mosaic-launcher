@@ -11,7 +11,7 @@ use log::{info, warn, error, debug};
 
 use crate::auth::AuthSession;
 use crate::config::Config;
-use crate::minecraft::{MinecraftManager, VersionManifest};
+use crate::games::minecraft::{MinecraftManager, VersionManifest};
 use crate::mods::ModManager;
 use crate::file_manager::FileManager;
 

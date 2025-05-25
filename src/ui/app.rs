@@ -15,7 +15,8 @@ use uuid::Uuid;
 
 use crate::auth::{AuthManager, AuthSession};
 use crate::config::{Config, Profile, ModLoader, save_config};
-use crate::minecraft::{MinecraftManager, VersionManifest, VersionInfo};
+use crate::games::{GamePluginManager, GamePlugin, GamePluginFactory};
+use crate::games::minecraft::{MinecraftManager, MinecraftPluginFactory, VersionManifest};
 use crate::mods::{ModManager, ModSearchParams, ModSearchResult, ModVersionInfo, ModSortField, SortOrder};
 use crate::file_manager::{FileManager, DownloadProgress};
 
@@ -93,7 +94,7 @@ impl MosaicApp {
                 auth_session.clone(),
                 version_manifest.clone(),
             );
-            
+
             // Show the window
             info!("Showing main window");
             window.present();

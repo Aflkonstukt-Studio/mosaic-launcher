@@ -33,6 +33,20 @@ impl FileManager {
         }
     }
 
+    /// Downloads a string from a URL
+    pub async fn download_string(&self, url: &str) -> Result<String> {
+        info!("Downloading string from {}", url);
+
+        let response = self.http_client.get(url)
+            .send()
+            .await?
+            .error_for_status()?;
+
+        let text = response.text().await?;
+
+        Ok(text)
+    }
+
     pub async fn create_dir_all<P: AsRef<Path>>(&self, path: P) -> Result<()> {
         fs::create_dir_all(path).await?;
         Ok(())
@@ -43,7 +57,7 @@ impl FileManager {
         url: &str,
         path: P,
         expected_hash: Option<&str>,
-        progress_callback: impl Fn(DownloadProgress) + Send + Sync + 'static,
+        progress_callback: impl Fn(DownloadProgress) + Send + Sync + 'static + Clone,
     ) -> Result<()> {
         let path = path.as_ref();
 
@@ -62,10 +76,60 @@ impl FileManager {
             }
         }
 
-        // Start the download
-        info!("Downloading {} to {:?}", url, path);
+        // Maximum number of retry attempts
+        const MAX_RETRIES: usize = 3;
+        let mut retry_count = 0;
+        let mut last_error = None;
 
+        while retry_count < MAX_RETRIES {
+            if retry_count > 0 {
+                info!("Retry attempt {} of {} for downloading {}", retry_count, MAX_RETRIES, url);
+                // Wait a bit before retrying
+                tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+            }
+
+            // Start the download
+            info!("Downloading {} to {:?}", url, path);
+
+            match self.download_file_internal(url, path, expected_hash, progress_callback.clone()).await {
+                Ok(()) => {
+                    info!("Download completed: {:?}", path);
+                    return Ok(());
+                },
+                Err(e) => {
+                    warn!("Download attempt {} failed: {}", retry_count + 1, e);
+                    last_error = Some(e);
+                    retry_count += 1;
+                }
+            }
+        }
+
+        // If we get here, all retry attempts failed
+        Err(last_error.unwrap_or_else(|| anyhow!("Failed to download file after {} attempts", MAX_RETRIES)))
+    }
+
+    async fn download_file_internal<P: AsRef<Path>>(
+        &self,
+        url: &str,
+        path: P,
+        expected_hash: Option<&str>,
+        progress_callback: impl Fn(DownloadProgress) + Send + Sync + 'static,
+    ) -> Result<()> {
+        let path = path.as_ref();
+
+        // If the file exists from a previous attempt, remove it
+        if path.exists() {
+            fs::remove_file(path).await?;
+        }
+
+        // Start the download
         let response = self.http_client.get(url).send().await?;
+
+        // Check if the response is successful
+        if !response.status().is_success() {
+            return Err(anyhow!("Server returned error status: {}", response.status()));
+        }
+
         let total_size = response.content_length();
 
         let file_name = path.file_name()
@@ -100,6 +164,20 @@ impl FileManager {
             });
         }
 
+        // Flush the file to ensure all data is written to disk
+        file.flush().await?;
+
+        // Verify the file size if total_size is known
+        if let Some(expected_size) = total_size {
+            let metadata = fs::metadata(path).await?;
+            let actual_size = metadata.len();
+
+            if actual_size != expected_size {
+                fs::remove_file(path).await?;
+                return Err(anyhow!("File size mismatch: expected {} bytes, got {} bytes", expected_size, actual_size));
+            }
+        }
+
         // Verify hash if provided
         if let Some(hash) = expected_hash {
             if !self.verify_file_hash(path, hash).await? {
@@ -108,7 +186,6 @@ impl FileManager {
             }
         }
 
-        info!("Download completed: {:?}", path);
         Ok(())
     }
 

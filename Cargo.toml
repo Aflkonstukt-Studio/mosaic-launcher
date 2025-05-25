@@ -33,4 +33,5 @@ sha1 = "0.10"      # For hash verification
 sha2 = "0.10"      # For hash verification
 url = "2.4"        # URL parsing
 chrono = { version = "0.4", features = ["serde"] } # Date/time handling
-uuid = { version = "1.4", features = ["v4"] } # UUID generation
+uuid = { version = "1.4", features = ["v4"] }
+which = "7.0.3" # UUID generation

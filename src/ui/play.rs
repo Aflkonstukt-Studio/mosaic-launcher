@@ -13,7 +13,7 @@ use log::{info, warn, error, debug};
 
 use crate::auth::AuthSession;
 use crate::config::{Config, save_config};
-use crate::minecraft::{MinecraftManager, VersionManifest};
+use crate::games::minecraft::{MinecraftManager, VersionManifest};
 
 pub fn build_play_view(
     window: &adw::ApplicationWindow,
@@ -334,21 +334,20 @@ pub fn build_play_view(
             let result = std::thread::spawn(move || {
                 let rt = tokio::runtime::Runtime::new().unwrap();
 
-                rt.block_on(async {
+                // Get the auth session
+                let auth = {
                     let auth_guard = auth_session_thread.lock().unwrap();
-                    let auth = auth_guard.as_ref().unwrap().clone();
-                    drop(auth_guard);
+                    auth_guard.as_ref().unwrap().clone()
+                };
 
-                    // Get the manager but don't hold the lock across await points
-                    let mut manager_guard = minecraft_manager_thread.lock().unwrap();
-                    let manager = &mut *manager_guard;
+                // Get the manager
+                let mut manager_guard = minecraft_manager_thread.lock().unwrap();
 
-                    // Launch the game
-                    manager.launch_game(&profile_clone_thread, &auth, move |progress| {
-                        // Send progress update through the channel
-                        let _ = sender_thread.send(progress);
-                    }).await
-                })
+                // Launch the game
+                rt.block_on(manager_guard.launch_game(&profile_clone_thread, &auth, move |progress| {
+                    // Send progress update through the channel
+                    let _ = sender_thread.send(progress);
+                }))
             }).join().unwrap();
 
             // Remove the progress bar
@@ -362,12 +361,7 @@ pub fn build_play_view(
             }
 
             match result {
-                Ok(_) => {
-                    // Extract the PID from the log output
-                    // In a real implementation, we would get this from the minecraft.rs file
-                    // For now, we'll use a dummy PID
-                    let pid = 12345; // Dummy PID
-
+                Ok(pid) => {
                     // Update the game state
                     *game_running_clone2.borrow_mut() = true;
                     *game_pid_clone2.borrow_mut() = Some(pid);

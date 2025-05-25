@@ -1,5 +1,5 @@
 mod auth;
-mod minecraft;
+mod games;
 mod mods;
 mod ui;
 mod file_manager;

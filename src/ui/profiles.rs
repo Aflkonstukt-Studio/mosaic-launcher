@@ -12,7 +12,7 @@ use log::{info, warn, error, debug};
 use uuid::Uuid;
 
 use crate::config::{Config, Profile, ModLoader, save_config};
-use crate::minecraft::VersionManifest;
+use crate::games::minecraft::VersionManifest;
 use crate::file_manager::FileManager;
 use std::fs;
 
@@ -383,13 +383,14 @@ fn show_profile_dialog(
     // Add a row for the mod loader
     let loader_row = adw::ComboRow::new();
     loader_row.set_title("Mod Loader");
-    let loader_model = gtk::StringList::new(&["None", "Forge", "Fabric", "Quilt"]);
+    let loader_model = gtk::StringList::new(&["None", "Forge", "Fabric", "Quilt", "NeoForge"]);
     loader_row.set_model(Some(&loader_model));
     if let Some(profile) = &profile {
         match &profile.mod_loader {
             Some(ModLoader::Forge) => loader_row.set_selected(1),
             Some(ModLoader::Fabric) => loader_row.set_selected(2),
             Some(ModLoader::Quilt) => loader_row.set_selected(3),
+            Some(ModLoader::NeoForge) => loader_row.set_selected(4),
             Some(ModLoader::None) | None => loader_row.set_selected(0),
         }
     } else {
@@ -397,6 +398,262 @@ fn show_profile_dialog(
         loader_row.set_selected(0);
     }
     basic_group.add(&loader_row);
+
+    // Add a row for the mod loader version
+    let loader_version_row = adw::ComboRow::new();
+    loader_version_row.set_title("Mod Loader Version");
+    let loader_version_model = gtk::StringList::new(&[]);
+    loader_version_row.set_model(Some(&loader_version_model));
+
+    // Function to populate the loader version dropdown based on the selected loader and Minecraft version
+    let populate_loader_versions = move |loader_index: u32, minecraft_version: &str, loader_version_model: &gtk::StringList, loader_version_row: &adw::ComboRow, current_version: Option<&str>| {
+        // Clear the current versions
+        while loader_version_model.n_items() > 0 {
+            loader_version_model.remove(0);
+        }
+
+        // Get versions based on the selected loader
+        let versions = match loader_index {
+            0 => vec![], // None
+            1 => { // Forge
+                let mut versions = vec![];
+
+                // Add known versions for specific Minecraft versions
+                match minecraft_version {
+                    "1.21.5" => versions.push("1.21.5-47.1.0".to_string()),
+                    "1.21.1" => versions.push("1.21.1-47.0.1".to_string()),
+                    "1.20.4" => {
+                        versions.push("1.20.4-49.0.3".to_string());
+                        versions.push("1.20.4-49.0.2".to_string());
+                        versions.push("1.20.4-49.0.1".to_string());
+                    },
+                    "1.20.1" => {
+                        versions.push("1.20.1-47.2.0".to_string());
+                        versions.push("1.20.1-47.1.0".to_string());
+                        versions.push("1.20.1-47.0.0".to_string());
+                    },
+                    "1.19.4" => {
+                        versions.push("1.19.4-45.1.0".to_string());
+                        versions.push("1.19.4-45.0.0".to_string());
+                    },
+                    "1.19.2" => {
+                        versions.push("1.19.2-43.2.0".to_string());
+                        versions.push("1.19.2-43.1.0".to_string());
+                        versions.push("1.19.2-43.0.0".to_string());
+                    },
+                    "1.18.2" => {
+                        versions.push("1.18.2-40.2.0".to_string());
+                        versions.push("1.18.2-40.1.0".to_string());
+                        versions.push("1.18.2-40.0.0".to_string());
+                    },
+                    "1.17.1" => {
+                        versions.push("1.17.1-37.1.1".to_string());
+                        versions.push("1.17.1-37.1.0".to_string());
+                        versions.push("1.17.1-37.0.0".to_string());
+                    },
+                    "1.16.5" => {
+                        versions.push("1.16.5-36.2.39".to_string());
+                        versions.push("1.16.5-36.2.0".to_string());
+                        versions.push("1.16.5-36.1.0".to_string());
+                    },
+                    _ => {
+                        // For unknown versions, don't add any default versions
+                        // The user will need to select a specific version
+                    }
+                }
+
+                // Remove duplicates
+                versions.sort();
+                versions.dedup();
+
+                versions
+            },
+            2 => { // Fabric
+                vec![
+                    "latest".to_string(),
+                    "0.15.3".to_string(),
+                    "0.15.2".to_string(),
+                    "0.15.1".to_string(),
+                    "0.15.0".to_string(),
+                    "0.14.21".to_string(),
+                    "0.14.20".to_string(),
+                    "0.14.19".to_string(),
+                    "0.14.18".to_string(),
+                    "0.14.17".to_string(),
+                    "0.14.16".to_string(),
+                    "0.14.15".to_string(),
+                    "0.14.14".to_string(),
+                ]
+            },
+            3 => { // Quilt
+                vec![
+                    "latest".to_string(),
+                    "0.20.2".to_string(),
+                    "0.20.1".to_string(),
+                    "0.20.0".to_string(),
+                    "0.19.2".to_string(),
+                    "0.19.1".to_string(),
+                    "0.19.0".to_string(),
+                    "0.18.10".to_string(),
+                    "0.18.9".to_string(),
+                    "0.18.8".to_string(),
+                ]
+            },
+            4 => { // NeoForge
+                let mut versions = vec![];
+
+                // Add known versions for specific Minecraft versions
+                match minecraft_version {
+                    "1.21.1" => versions.push("1.21.1-47.0.1".to_string()),
+                    "1.20.4" => {
+                        versions.push("1.20.4-49.0.3".to_string());
+                        versions.push("1.20.4-49.0.2".to_string());
+                        versions.push("1.20.4-49.0.1".to_string());
+                    },
+                    "1.20.1" => {
+                        versions.push("1.20.1-47.2.0".to_string());
+                        versions.push("1.20.1-47.1.0".to_string());
+                        versions.push("1.20.1-47.0.0".to_string());
+                    },
+                    "1.19.4" => {
+                        versions.push("1.19.4-45.1.0".to_string());
+                        versions.push("1.19.4-45.0.0".to_string());
+                    },
+                    "1.19.2" => {
+                        versions.push("1.19.2-43.2.0".to_string());
+                        versions.push("1.19.2-43.1.0".to_string());
+                        versions.push("1.19.2-43.0.0".to_string());
+                    },
+                    _ => {
+                        // For unknown versions, don't add any default versions
+                        // The user will need to select a specific version
+                    }
+                }
+
+                // Remove duplicates
+                versions.sort();
+                versions.dedup();
+
+                versions
+            },
+            _ => vec![],
+        };
+
+        // Add versions to the model
+        for version in &versions {
+            loader_version_model.append(version);
+        }
+
+        // Set the selected version
+        if let Some(version) = current_version {
+            for (i, v) in versions.iter().enumerate() {
+                if v == version {
+                    loader_version_row.set_selected(i as u32);
+                    return;
+                }
+            }
+        }
+
+        // If no version was selected or the current version wasn't found, select the first one
+        if !versions.is_empty() {
+            loader_version_row.set_selected(0);
+        }
+    };
+
+    // Get the current Minecraft version
+    let minecraft_version = if let Some(manifest) = &*version_manifest.lock().unwrap() {
+        let selected_index = version_row.selected();
+        if selected_index != gtk::INVALID_LIST_POSITION && selected_index < manifest.versions.len() as u32 {
+            manifest.versions[selected_index as usize].id.clone()
+        } else {
+            manifest.latest.release.clone()
+        }
+    } else {
+        "1.20.4".to_string() // Default to a recent version if manifest isn't loaded
+    };
+
+    // Populate the loader version dropdown with the current values
+    let current_version = profile.as_ref().and_then(|p| p.mod_loader_version.as_deref());
+    populate_loader_versions(
+        loader_row.selected(),
+        &minecraft_version,
+        &loader_version_model,
+        &loader_version_row,
+        current_version
+    );
+
+    // Connect the loader row to update the loader version dropdown when it changes
+    let loader_version_row_clone = loader_version_row.clone();
+    let loader_version_model_clone = loader_version_model.clone();
+    let version_row_clone = version_row.clone();
+    let version_manifest_clone = version_manifest.clone();
+    loader_row.connect_selected_notify(move |loader_row| {
+        let loader_index = loader_row.selected();
+
+        // Get the current Minecraft version
+        let minecraft_version = if let Some(manifest) = &*version_manifest_clone.lock().unwrap() {
+            let selected_index = version_row_clone.selected();
+            if selected_index != gtk::INVALID_LIST_POSITION && selected_index < manifest.versions.len() as u32 {
+                manifest.versions[selected_index as usize].id.clone()
+            } else {
+                manifest.latest.release.clone()
+            }
+        } else {
+            "1.20.4".to_string() // Default to a recent version if manifest isn't loaded
+        };
+
+        // Populate the loader version dropdown
+        populate_loader_versions(
+            loader_index,
+            &minecraft_version,
+            &loader_version_model_clone,
+            &loader_version_row_clone,
+            None
+        );
+
+        // Show/hide the loader version row based on whether a loader is selected
+        loader_version_row_clone.set_visible(loader_index != 0);
+    });
+
+    // Connect the version row to update the loader version dropdown when it changes
+    let loader_version_row_clone = loader_version_row.clone();
+    let loader_version_model_clone = loader_version_model.clone();
+    let loader_row_clone = loader_row.clone();
+    let version_manifest_clone = version_manifest.clone();
+    version_row.connect_selected_notify(move |version_row| {
+        let loader_index = loader_row_clone.selected();
+
+        // Skip if no loader is selected
+        if loader_index == 0 {
+            return;
+        }
+
+        // Get the current Minecraft version
+        let minecraft_version = if let Some(manifest) = &*version_manifest_clone.lock().unwrap() {
+            let selected_index = version_row.selected();
+            if selected_index != gtk::INVALID_LIST_POSITION && selected_index < manifest.versions.len() as u32 {
+                manifest.versions[selected_index as usize].id.clone()
+            } else {
+                manifest.latest.release.clone()
+            }
+        } else {
+            "1.20.4".to_string() // Default to a recent version if manifest isn't loaded
+        };
+
+        // Populate the loader version dropdown
+        populate_loader_versions(
+            loader_index,
+            &minecraft_version,
+            &loader_version_model_clone,
+            &loader_version_row_clone,
+            None
+        );
+    });
+
+    // Show the loader version row only if a loader is selected
+    loader_version_row.set_visible(loader_row.selected() != 0);
+
+    basic_group.add(&loader_version_row);
 
     // Add a row for the game directory
     let game_dir_row = adw::ActionRow::new();
@@ -501,6 +758,8 @@ fn show_profile_dialog(
         let name_entry_clone = name_entry.clone();
         let version_row_clone = version_row.clone();
         let loader_row_clone = loader_row.clone();
+        let loader_version_row_clone = loader_version_row.clone();
+        let loader_version_model_clone = loader_version_model.clone();
         let game_dir_entry_clone = game_dir_entry.clone();
         let memory_entry_clone = memory_entry.clone();
         let version_manifest_clone = version_manifest.clone();
@@ -511,6 +770,7 @@ fn show_profile_dialog(
             let name = name_entry_clone.text().to_string();
             let version_index = version_row_clone.selected();
             let loader_index = loader_row_clone.selected();
+            let loader_version_index = loader_version_row_clone.selected();
             let game_dir = game_dir_entry_clone.text().to_string();
             let memory = memory_entry_clone.value() as u32;
 
@@ -547,6 +807,7 @@ fn show_profile_dialog(
                 1 => ModLoader::Forge,
                 2 => ModLoader::Fabric,
                 3 => ModLoader::Quilt,
+                4 => ModLoader::NeoForge,
                 _ => {
                     let toast = adw::Toast::new("Invalid mod loader selected");
                     toast_overlay_clone.add_toast(toast);
@@ -580,12 +841,21 @@ fn show_profile_dialog(
 
             // Create a new profile
             let id = Uuid::new_v4().to_string();
+
+            // Get the selected mod loader version if a loader is selected
+            let mod_loader_version = if loader_index != 0 && loader_version_index != gtk::INVALID_LIST_POSITION {
+                // Get the version from the model
+                loader_version_model_clone.string(loader_version_index).map(|s| s.to_string())
+            } else {
+                None
+            };
+
             game.profiles.push(Profile {
                 id: id.clone(),
                 name,
                 version,
                 mod_loader: Some(mod_loader),
-                mod_loader_version: None,
+                mod_loader_version,
                 game_directory: if game_dir.is_empty() {
                     None
                 } else {
@@ -654,6 +924,8 @@ fn show_profile_dialog(
         let name_entry_clone = name_entry.clone();
         let version_row_clone = version_row.clone();
         let loader_row_clone = loader_row.clone();
+        let loader_version_row_clone = loader_version_row.clone();
+        let loader_version_model_clone = loader_version_model.clone();
         let game_dir_entry_clone = game_dir_entry.clone();
         let memory_entry_clone = memory_entry.clone();
         let version_manifest_clone = version_manifest.clone();
@@ -663,6 +935,7 @@ fn show_profile_dialog(
             let name = name_entry_clone.text().to_string();
             let version_index = version_row_clone.selected();
             let loader_index = loader_row_clone.selected();
+            let loader_version_index = loader_version_row_clone.selected();
             let game_dir = game_dir_entry_clone.text().to_string();
 
             // Validate the form
@@ -698,6 +971,7 @@ fn show_profile_dialog(
                 1 => ModLoader::Forge,
                 2 => ModLoader::Fabric,
                 3 => ModLoader::Quilt,
+                4 => ModLoader::NeoForge,
                 _ => {
                     let toast = adw::Toast::new("Invalid mod loader selected");
                     toast_overlay_clone.add_toast(toast);
@@ -736,6 +1010,15 @@ fn show_profile_dialog(
                         p.name = name;
                         p.version = version;
                         p.mod_loader = Some(mod_loader);
+
+                        // Get the selected mod loader version if a loader is selected
+                        p.mod_loader_version = if loader_index != 0 && loader_version_index != gtk::INVALID_LIST_POSITION {
+                            // Get the version from the model
+                            loader_version_model_clone.string(loader_version_index).map(|s| s.to_string())
+                        } else {
+                            None
+                        };
+
                         p.game_directory = if game_dir.is_empty() {
                             None
                         } else {
@@ -749,12 +1032,21 @@ fn show_profile_dialog(
             } else {
                 // Create a new profile
                 let id = Uuid::new_v4().to_string();
+
+                // Get the selected mod loader version if a loader is selected
+                let mod_loader_version = if loader_index != 0 && loader_version_index != gtk::INVALID_LIST_POSITION {
+                    // Get the version from the model
+                    loader_version_model_clone.string(loader_version_index).map(|s| s.to_string())
+                } else {
+                    None
+                };
+
                 game.profiles.push(Profile {
                     id: id.clone(),
                     name,
                     version,
                     mod_loader: Some(mod_loader),
-                    mod_loader_version: None,
+                    mod_loader_version,
                     game_directory: if game_dir.is_empty() {
                         None
                     } else {
