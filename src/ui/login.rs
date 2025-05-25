@@ -363,6 +363,115 @@ pub fn build_login_view(
     });
     login_box.append(&login_button);
 
+    // Add an "Offline Mode" button
+    let offline_button = gtk::Button::with_label("Play in Offline Mode");
+    offline_button.add_css_class("pill");
+    offline_button.set_halign(gtk::Align::Center);
+    offline_button.set_margin_top(10);
+
+    // Clone references for the closure
+    let auth_manager_clone = auth_manager.clone();
+    let auth_session_clone = auth_session.clone();
+    let stack_clone = stack.clone();
+    let toast_overlay_clone = toast_overlay.clone();
+    let window_clone = window.clone();
+
+    // Connect the offline button click event
+    offline_button.connect_clicked(move |_| {
+        // Create a dialog for entering a username
+        let dialog = gtk::Dialog::new();
+        dialog.set_title(Some("Offline Mode"));
+        dialog.set_modal(true);
+        dialog.set_transient_for(Some(&window_clone));
+        dialog.set_default_width(350);
+
+        // Create a header bar with title
+        let header_bar = gtk::HeaderBar::new();
+        header_bar.set_title_widget(Some(&gtk::Label::builder()
+            .label("Enter Username")
+            .css_classes(vec!["title-3"])
+            .build()));
+        header_bar.set_show_title_buttons(false);
+        dialog.set_titlebar(Some(&header_bar));
+
+        // Create the content area
+        let content_area = dialog.content_area();
+        content_area.set_margin_top(24);
+        content_area.set_margin_bottom(24);
+        content_area.set_margin_start(24);
+        content_area.set_margin_end(24);
+        content_area.set_spacing(16);
+
+        // Add instructions
+        let instructions_label = gtk::Label::new(Some("Enter a username to use in offline mode:"));
+        instructions_label.set_halign(gtk::Align::Start);
+        content_area.append(&instructions_label);
+
+        // Add username entry
+        let username_entry = gtk::Entry::new();
+        username_entry.set_placeholder_text(Some("Username"));
+        username_entry.set_activates_default(true);
+        content_area.append(&username_entry);
+
+        // Add warning label
+        let warning_label = gtk::Label::new(Some("Warning: Offline mode only works for singleplayer or cracked servers."));
+        warning_label.add_css_class("caption");
+        warning_label.set_halign(gtk::Align::Start);
+        content_area.append(&warning_label);
+
+        // Add action buttons
+        dialog.add_button("Cancel", gtk::ResponseType::Cancel);
+        let ok_button = dialog.add_button("Play Offline", gtk::ResponseType::Ok);
+        dialog.set_default_response(gtk::ResponseType::Ok);
+
+        // Clone references for the response handler
+        let auth_manager = auth_manager_clone.clone();
+        let auth_session = auth_session_clone.clone();
+        let stack = stack_clone.clone();
+        let toast_overlay = toast_overlay_clone.clone();
+        let username_entry_clone = username_entry.clone();
+
+        // Connect the response signal
+        dialog.connect_response(move |dialog, response| {
+            dialog.destroy();
+
+            if response == gtk::ResponseType::Ok {
+                let username = username_entry_clone.text().to_string();
+
+                // Validate username
+                if username.is_empty() {
+                    let toast = adw::Toast::new("Username cannot be empty");
+                    toast_overlay.add_toast(toast);
+                    return;
+                }
+
+                // Create an offline session
+                match auth_manager.create_offline_session(&username) {
+                    Ok(session) => {
+                        // Store the auth session
+                        *auth_session.lock().unwrap() = Some(session);
+
+                        // Show a success toast
+                        let toast = adw::Toast::new(&format!("Playing as {} (offline mode)", username));
+                        toast_overlay.add_toast(toast);
+
+                        // Switch to the main view
+                        stack.set_visible_child_name("main");
+                    }
+                    Err(e) => {
+                        // Show error toast
+                        let toast = adw::Toast::new(&format!("Failed to create offline session: {}", e));
+                        toast_overlay.add_toast(toast);
+                    }
+                }
+            }
+        });
+
+        // Show the dialog
+        dialog.present();
+    });
+    login_box.append(&offline_button);
+
     // Add a "Continue without logging in" button
     let continue_button = gtk::Button::with_label("Continue without logging in");
     continue_button.add_css_class("pill");
@@ -377,7 +486,7 @@ pub fn build_login_view(
         let toast = adw::Toast::new("You can browse and download mods, but you'll need to sign in to play Minecraft");
         toast_overlay_clone.add_toast(toast);
         let stack_clone = stack_clone.clone();
-        
+
         glib::idle_add_local_once(move || {
             info!("Switching to main view");
             stack_clone.set_visible_child_name("main");

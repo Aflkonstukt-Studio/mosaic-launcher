@@ -45,7 +45,23 @@ pub fn build_settings_view(
     // Add a row for the Minecraft directory
     let minecraft_dir_row = adw::ActionRow::new();
     minecraft_dir_row.set_title("Minecraft Directory");
-    minecraft_dir_row.set_subtitle(&config.borrow().minecraft_directory.to_string_lossy());
+
+    // Get the selected game's directory
+    let config_ref = config.borrow();
+    let selected_game_id = config_ref.selected_game.clone().unwrap_or_else(|| {
+        if !config_ref.games.is_empty() {
+            config_ref.games[0].id.clone()
+        } else {
+            "minecraft".to_string()
+        }
+    });
+
+    let game_dir = config_ref.games.iter()
+        .find(|g| g.id == selected_game_id)
+        .map(|g| g.game_directory.clone())
+        .unwrap_or_else(|| PathBuf::from(""));
+
+    minecraft_dir_row.set_subtitle(&game_dir.to_string_lossy());
 
     let browse_button = gtk::Button::with_label("Browse");
     browse_button.set_valign(gtk::Align::Center);
@@ -73,7 +89,19 @@ pub fn build_settings_view(
             if let Ok(file) = result {
                 if let Some(path) = file.path() {
                     // Update the config
-                    config.borrow_mut().minecraft_directory = path.clone();
+                    let mut config_mut = config.borrow_mut();
+                    let selected_game_id = config_mut.selected_game.clone().unwrap_or_else(|| {
+                        if !config_mut.games.is_empty() {
+                            config_mut.games[0].id.clone()
+                        } else {
+                            "minecraft".to_string()
+                        }
+                    });
+
+                    // Find the selected game and update its directory
+                    if let Some(game) = config_mut.games.iter_mut().find(|g| g.id == selected_game_id) {
+                        game.game_directory = path.clone();
+                    }
 
                     // Update the UI
                     minecraft_dir_row.set_subtitle(&path.to_string_lossy());

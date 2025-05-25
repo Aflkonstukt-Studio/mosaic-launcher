@@ -19,6 +19,7 @@ use super::play::build_play_view;
 use super::profiles::build_profiles_view;
 use super::mods::build_mods_view;
 use super::settings::build_settings_view;
+use super::game_selector::build_game_selector;
 
 pub fn build_main_view(
     window: &adw::ApplicationWindow,
@@ -132,6 +133,7 @@ fn build_sidebar(
 
     // Navigation items
     let items = [
+        ("Games", "applications-games-symbolic"),
         ("Play", "media-playback-start-symbolic"),
         ("Profiles", "view-list-symbolic"),
         ("Mods", "view-grid-symbolic"),
@@ -202,28 +204,33 @@ fn handle_sidebar_selection(
 
         // Build and add new content
         let new_content = match row.index() {
-            0 => build_play_view(
+            0 => build_game_selector(
+                window,
+                toast_overlay,
+                config.clone(),
+            ).upcast(),
+            1 => build_play_view(
                 window,
                 toast_overlay,
                 config,
                 minecraft_manager,
                 auth_session,
                 version_manifest,
-            ),
-            1 => build_profiles_view(
+            ).upcast(),
+            2 => build_profiles_view(
                 window,
                 toast_overlay,
                 config,
                 version_manifest,
             ).upcast(),
-            2 => build_mods_view(
+            3 => build_mods_view(
                 window,
                 toast_overlay,
                 config,
                 mod_manager,
                 file_manager,
             ).upcast(),
-            3 => build_settings_view(
+            4 => build_settings_view(
                 window,
                 toast_overlay,
                 config,

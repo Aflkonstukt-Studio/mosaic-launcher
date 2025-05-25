@@ -8,6 +8,7 @@ use reqwest::blocking::Client as HttpClient;
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
 use log::{info, error, debug, warn};
+use uuid::Uuid;
 
 const MS_CLIENT_ID: &str = "2533faf1-dfcc-4f08-9520-83d421e91426";
 const MS_AUTH_URL: &str = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
@@ -50,6 +51,7 @@ pub struct AuthSession {
     pub expires_at: Option<u64>,
     pub minecraft_token: Option<String>,
     pub minecraft_profile: Option<MinecraftProfile>,
+    pub is_offline: bool,
 }
 
 pub struct AuthManager {
@@ -310,6 +312,39 @@ impl AuthManager {
             expires_at: token_response.expires_at,
             minecraft_token: Some(minecraft_token),
             minecraft_profile: Some(minecraft_profile),
+            is_offline: false,
+        })
+    }
+
+    // Create an offline session with a custom username
+    pub fn create_offline_session(&self, username: &str) -> Result<AuthSession> {
+        info!("Creating offline session for username: {}", username);
+
+        if username.is_empty() {
+            return Err(anyhow!("Username cannot be empty"));
+        }
+
+        // Generate a UUID for the offline player
+        // In a real implementation, we would use a deterministic UUID based on the username
+        // but for simplicity, we'll use a random UUID
+        let uuid = Uuid::new_v4();
+
+        // Create a minimal Minecraft profile
+        let minecraft_profile = MinecraftProfile {
+            id: uuid.to_string().replace("-", ""), // Minecraft uses UUIDs without hyphens
+            name: username.to_string(),
+            skins: vec![],
+            capes: vec![],
+        };
+
+        // Create and return the offline auth session
+        Ok(AuthSession {
+            access_token: "offline".to_string(),
+            refresh_token: None,
+            expires_at: None,
+            minecraft_token: Some("offline".to_string()),
+            minecraft_profile: Some(minecraft_profile),
+            is_offline: true,
         })
     }
 }

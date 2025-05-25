@@ -8,5 +8,6 @@ mod play;
 mod profiles;
 mod mods;
 mod settings;
+mod game_selector;
 
 pub use app::MosaicApp;

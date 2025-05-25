@@ -54,10 +54,30 @@ pub fn build_mods_view(
     content.append(&profile_box);
 
     // Populate the profile selector
-    let profiles = &config.borrow().profiles;
+    let config_ref = config.borrow();
+    let selected_game_id = config_ref.selected_game.clone().unwrap_or_else(|| {
+        if !config_ref.games.is_empty() {
+            config_ref.games[0].id.clone()
+        } else {
+            "minecraft".to_string()
+        }
+    });
+
+    let game = config_ref.games.iter()
+        .find(|g| g.id == selected_game_id)
+        .unwrap_or_else(|| {
+            // If the selected game doesn't exist, use the first game
+            if !config_ref.games.is_empty() {
+                &config_ref.games[0]
+            } else {
+                panic!("No games found in config")
+            }
+        });
+
+    let profiles = &game.profiles;
     let mut selected_index = 0;
 
-    if let Some(last_used) = &config.borrow().last_used_profile {
+    if let Some(last_used) = &config_ref.last_used_profile {
         for (i, profile) in profiles.iter().enumerate() {
             profile_model.append(&profile.name);
             if &profile.id == last_used {
@@ -125,7 +145,28 @@ pub fn build_mods_view(
             return;
         }
 
-        let profiles = &config_clone.borrow().profiles;
+        // Get profiles from the selected game
+        let config_ref = config_clone.borrow();
+        let selected_game_id = config_ref.selected_game.clone().unwrap_or_else(|| {
+            if !config_ref.games.is_empty() {
+                config_ref.games[0].id.clone()
+            } else {
+                "minecraft".to_string()
+            }
+        });
+
+        let game = config_ref.games.iter()
+            .find(|g| g.id == selected_game_id)
+            .unwrap_or_else(|| {
+                // If the selected game doesn't exist, use the first game
+                if !config_ref.games.is_empty() {
+                    &config_ref.games[0]
+                } else {
+                    panic!("No games found in config")
+                }
+            });
+
+        let profiles = &game.profiles;
         if selected as usize >= profiles.len() {
             let toast = adw::Toast::new("Invalid profile selected");
             toast_overlay_clone.add_toast(toast);
@@ -307,7 +348,26 @@ fn build_mod_card(
         // Check if profile is valid
         {
             let config_ref = config.borrow();
-            if profile_index as usize >= config_ref.profiles.len() {
+            let selected_game_id = config_ref.selected_game.clone().unwrap_or_else(|| {
+                if !config_ref.games.is_empty() {
+                    config_ref.games[0].id.clone()
+                } else {
+                    "minecraft".to_string()
+                }
+            });
+
+            let game = config_ref.games.iter()
+                .find(|g| g.id == selected_game_id)
+                .unwrap_or_else(|| {
+                    // If the selected game doesn't exist, use the first game
+                    if !config_ref.games.is_empty() {
+                        &config_ref.games[0]
+                    } else {
+                        panic!("No games found in config")
+                    }
+                });
+
+            if profile_index as usize >= game.profiles.len() {
                 let toast = adw::Toast::new("Invalid profile selected");
                 toast_overlay.add_toast(toast);
                 button.set_label("Install");
@@ -338,13 +398,53 @@ fn build_mod_card(
             // First, extract the profile ID so we can look it up again later
             let profile_id = {
                 let config_ref = config.borrow();
-                config_ref.profiles[profile_index as usize].id.clone()
+                let selected_game_id = config_ref.selected_game.clone().unwrap_or_else(|| {
+                    if !config_ref.games.is_empty() {
+                        config_ref.games[0].id.clone()
+                    } else {
+                        "minecraft".to_string()
+                    }
+                });
+
+                let game = config_ref.games.iter()
+                    .find(|g| g.id == selected_game_id)
+                    .unwrap_or_else(|| {
+                        // If the selected game doesn't exist, use the first game
+                        if !config_ref.games.is_empty() {
+                            &config_ref.games[0]
+                        } else {
+                            panic!("No games found in config")
+                        }
+                    });
+
+                game.profiles[profile_index as usize].id.clone()
             };
 
             // Now install the mod with a temporary mutable borrow
             let install_result = {
                 let mut config_mut = config.borrow_mut();
-                let profile = &mut config_mut.profiles[profile_index as usize];
+
+                // Get the selected game ID
+                let selected_game_id = config_mut.selected_game.clone().unwrap_or_else(|| {
+                    if !config_mut.games.is_empty() {
+                        config_mut.games[0].id.clone()
+                    } else {
+                        "minecraft".to_string()
+                    }
+                });
+
+                // Find the game index
+                let game_index = if let Some(index) = config_mut.games.iter().position(|g| g.id == selected_game_id) {
+                    index
+                } else if !config_mut.games.is_empty() {
+                    0
+                } else {
+                    panic!("No games found in config")
+                };
+
+                // Get a mutable reference to the game and profile
+                let game = &mut config_mut.games[game_index];
+                let profile = &mut game.profiles[profile_index as usize];
 
                 mod_manager.borrow_mut().install_mod(
                     profile,
@@ -361,7 +461,29 @@ fn build_mod_card(
                     // Update the config with the installed mod
                     {
                         let mut config_mut = config.borrow_mut();
-                        let profile = &mut config_mut.profiles[profile_index as usize];
+
+                        // Get the selected game ID
+                        let selected_game_id = config_mut.selected_game.clone().unwrap_or_else(|| {
+                            if !config_mut.games.is_empty() {
+                                config_mut.games[0].id.clone()
+                            } else {
+                                "minecraft".to_string()
+                            }
+                        });
+
+                        // Find the game index
+                        let game_index = if let Some(index) = config_mut.games.iter().position(|g| g.id == selected_game_id) {
+                            index
+                        } else if !config_mut.games.is_empty() {
+                            0
+                        } else {
+                            panic!("No games found in config")
+                        };
+
+                        // Get a mutable reference to the game and profile
+                        let game = &mut config_mut.games[game_index];
+                        let profile = &mut game.profiles[profile_index as usize];
+
                         // Update profile with installed mod if needed
                         // For example: profile.mods.push(mod_result.id.clone());
                     }

@@ -292,6 +292,32 @@ impl ModManager {
         }
     }
 
+    // Helper method to get the Minecraft directory from the selected game
+    fn get_minecraft_directory(&self) -> PathBuf {
+        // Get the selected game ID
+        let selected_game_id = self.config.selected_game.clone().unwrap_or_else(|| {
+            if !self.config.games.is_empty() {
+                self.config.games[0].id.clone()
+            } else {
+                "minecraft".to_string()
+            }
+        });
+
+        // Find the selected game
+        let game = self.config.games.iter()
+            .find(|g| g.id == selected_game_id)
+            .unwrap_or_else(|| {
+                // If the selected game doesn't exist, use the first game or create a default one
+                if !self.config.games.is_empty() {
+                    &self.config.games[0]
+                } else {
+                    panic!("No games found in config")
+                }
+            });
+
+        game.game_directory.clone()
+    }
+
     pub async fn search_mods(&self, params: &ModSearchParams) -> Result<Vec<ModSearchResult>> {
         info!("Searching for mods with query: {}", params.query);
 
@@ -727,7 +753,7 @@ impl ModManager {
         // Determine mods directory
         let mods_dir = match &profile.game_directory {
             Some(dir) => PathBuf::from(dir).join("mods"),
-            None => self.config.minecraft_directory.join("mods"),
+            None => self.get_minecraft_directory().join("mods"),
         };
 
         // Create mods directory if it doesn't exist
@@ -772,7 +798,7 @@ impl ModManager {
         // Determine mods directory
         let mods_dir = match &profile.game_directory {
             Some(dir) => PathBuf::from(dir).join("mods"),
-            None => self.config.minecraft_directory.join("mods"),
+            None => self.get_minecraft_directory().join("mods"),
         };
 
         // Find and remove the mod file

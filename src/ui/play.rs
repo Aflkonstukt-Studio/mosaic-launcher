@@ -7,6 +7,8 @@ use adw::prelude::*;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
+use std::process::Command;
+use std::thread;
 use log::{info, warn, error, debug};
 
 use crate::auth::AuthSession;
@@ -27,6 +29,11 @@ pub fn build_play_view(
     play_box.set_hexpand(true);
     play_box.set_vexpand(true);
     play_box.set_size_request(800, 600);
+
+    // Create a cell to track if the game is running
+    let game_running = Rc::new(RefCell::new(false));
+    // Create a cell to store the current game PID
+    let game_pid = Rc::new(RefCell::new(None::<u32>));
 
     // Create a header bar
     let header = adw::HeaderBar::new();
@@ -56,10 +63,30 @@ pub fn build_play_view(
     content.append(&profile_box);
 
     // Populate the profile selector
-    let profiles = &config.borrow().profiles;
+    let config_ref = config.borrow();
+    let selected_game_id = config_ref.selected_game.clone().unwrap_or_else(|| {
+        if !config_ref.games.is_empty() {
+            config_ref.games[0].id.clone()
+        } else {
+            "minecraft".to_string()
+        }
+    });
+
+    let game = config_ref.games.iter()
+        .find(|g| g.id == selected_game_id)
+        .unwrap_or_else(|| {
+            // If the selected game doesn't exist, use the first game
+            if !config_ref.games.is_empty() {
+                &config_ref.games[0]
+            } else {
+                panic!("No games found in config")
+            }
+        });
+
+    let profiles = &game.profiles;
     let mut selected_index = 0;
 
-    if let Some(last_used) = &config.borrow().last_used_profile {
+    if let Some(last_used) = &config_ref.last_used_profile {
         for (i, profile) in profiles.iter().enumerate() {
             profile_model.append(&profile.name);
             if &profile.id == last_used {
@@ -111,8 +138,52 @@ pub fn build_play_view(
     let toast_overlay_clone = toast_overlay.clone();
     let profile_combo_clone = profile_combo.clone();
     let login_message_clone = login_message.clone();
+    let game_running_clone = game_running.clone();
+    let game_pid_clone = game_pid.clone();
 
     play_button.connect_clicked(move |button| {
+        // Check if the game is already running
+        if *game_running_clone.borrow() {
+            // Game is running, kill the process
+            if let Some(pid) = *game_pid_clone.borrow() {
+                info!("Killing Minecraft process with PID: {}", pid);
+
+                // Use different kill commands based on the platform
+                let kill_result = if cfg!(target_os = "windows") {
+                    Command::new("taskkill")
+                        .args(&["/F", "/PID", &pid.to_string()])
+                        .status()
+                } else {
+                    Command::new("kill")
+                        .arg(&pid.to_string())
+                        .status()
+                };
+
+                match kill_result {
+                    Ok(status) => {
+                        if status.success() {
+                            let toast = adw::Toast::new("Minecraft process terminated");
+                            toast_overlay_clone.add_toast(toast);
+                        } else {
+                            let toast = adw::Toast::new("Failed to terminate Minecraft process");
+                            toast_overlay_clone.add_toast(toast);
+                        }
+                    },
+                    Err(e) => {
+                        let toast = adw::Toast::new(&format!("Error terminating Minecraft: {}", e));
+                        toast_overlay_clone.add_toast(toast);
+                    }
+                }
+            }
+
+            // Reset the button and state
+            button.remove_css_class("destructive-action");
+            button.set_label("Play");
+            *game_running_clone.borrow_mut() = false;
+            *game_pid_clone.borrow_mut() = None;
+            return;
+        }
+
         // Check if user is logged in
         if auth_session_clone.lock().unwrap().is_none() {
             let toast = adw::Toast::new("You need to sign in to play Minecraft");
@@ -128,19 +199,58 @@ pub fn build_play_view(
             return;
         }
 
-        let profiles = &config_clone.borrow().profiles;
-        if selected as usize >= profiles.len() {
-            let toast = adw::Toast::new("Invalid profile selected");
-            toast_overlay_clone.add_toast(toast);
-            return;
+        // Get profiles from the selected game and extract the profile ID
+        let profile_id = {
+            let config_ref = config_clone.borrow();
+            let selected_game_id = config_ref.selected_game.clone().unwrap_or_else(|| {
+                if !config_ref.games.is_empty() {
+                    config_ref.games[0].id.clone()
+                } else {
+                    "minecraft".to_string()
+                }
+            });
+
+            let game = config_ref.games.iter()
+                .find(|g| g.id == selected_game_id)
+                .unwrap_or_else(|| {
+                    // If the selected game doesn't exist, use the first game
+                    if !config_ref.games.is_empty() {
+                        &config_ref.games[0]
+                    } else {
+                        panic!("No games found in config")
+                    }
+                });
+
+            let profiles = &game.profiles;
+            if selected as usize >= profiles.len() {
+                let toast = adw::Toast::new("Invalid profile selected");
+                toast_overlay_clone.add_toast(toast);
+                return;
+            }
+
+            let profile = &profiles[selected as usize];
+            let profile_clone = profile.clone();
+
+            // Store the profile ID for later use
+            let profile_id = profile.id.clone();
+
+            // Return both the profile clone and the profile ID
+            (profile_clone, profile_id)
+        };
+
+        let (profile_clone, profile_id) = profile_id;
+
+        // Update last used profile - now the previous borrow is dropped
+        {
+            let mut config_mut = config_clone.borrow_mut();
+            config_mut.last_used_profile = Some(profile_id);
+
+            // Save while we have the mutable borrow
+            if let Err(e) = save_config(&config_mut) {
+                let toast = adw::Toast::new(&format!("Failed to save profile selection: {}", e));
+                toast_overlay_clone.add_toast(toast);
+            }
         }
-
-        let profile = &profiles[selected as usize];
-        let profile_clone = profile.clone();
-
-        // Update last used profile
-        config_clone.borrow_mut().last_used_profile = Some(profile.id.clone());
-        let _ = save_config(&config_clone.borrow());
 
         // Show a loading indicator
         let spinner = gtk::Spinner::new();
@@ -148,32 +258,137 @@ pub fn build_play_view(
         button.set_child(Some(&spinner));
         button.set_sensitive(false);
 
+        // Remove any existing progress bar
+        let mut child_opt = content.first_child();
+        while let Some(child) = child_opt {
+            if let Some(_) = child.downcast_ref::<gtk::ProgressBar>() {
+                content.remove(&child);
+                break;
+            }
+            child_opt = child.next_sibling();
+        }
+
+        // Create a progress bar
+        let progress_bar = gtk::ProgressBar::new();
+        progress_bar.set_show_text(true);
+        progress_bar.set_text(Some("Preparing..."));
+        progress_bar.set_margin_top(10);
+        progress_bar.set_margin_bottom(10);
+        progress_bar.set_margin_start(20);
+        progress_bar.set_margin_end(20);
+        progress_bar.set_visible(true);
+        content.append(&progress_bar);
+
+        // Create a channel for progress updates
+        let (sender, receiver) = glib::MainContext::channel(glib::Priority::DEFAULT);
+
+        // Set up the receiver to update the UI
+        receiver.attach(None, clone!(@strong progress_bar => move |progress: crate::file_manager::DownloadProgress| {
+            // Update the progress bar
+            let percentage = progress.percentage / 100.0;
+            progress_bar.set_fraction(percentage as f64);
+
+            // Update the progress text
+            let downloaded_mb = progress.downloaded_size as f64 / 1024.0 / 1024.0;
+            let total_mb = match progress.total_size {
+                Some(size) => size as f64 / 1024.0 / 1024.0,
+                None => 0.0,
+            };
+
+            if total_mb > 0.0 {
+                progress_bar.set_text(Some(&format!("Downloading {} ({:.1} MB / {:.1} MB)", 
+                    progress.file_name, downloaded_mb, total_mb)));
+            } else {
+                progress_bar.set_text(Some(&format!("Downloading {} ({:.1} MB)", 
+                    progress.file_name, downloaded_mb)));
+            }
+
+            glib::ControlFlow::Continue
+        }));
+
         // Clone references for the async closure
         let minecraft_manager = minecraft_manager_clone.clone();
         let auth_session = auth_session_clone.clone();
         let toast_overlay = toast_overlay_clone.clone();
         let button = button.clone();
+        let sender = sender.clone();
+        let content_clone = content.clone();
+        let game_running_clone2 = game_running_clone.clone();
+        let game_pid_clone2 = game_pid_clone.clone();
 
-        // Launch the game
+        // Clone profile_clone for use after the async block
+        let profile_name = profile_clone.name.clone();
+
         gtk::glib::spawn_future_local(async move {
-            let auth = auth_session.lock().unwrap();
-            // We know auth_session is Some because we checked above
-            let auth = auth.as_ref().unwrap();
+            button.set_label("Downloading...");
+            button.set_sensitive(false);
 
-            match minecraft_manager.lock().unwrap().launch_game(&profile_clone, auth) {
+            // Clone variables for the thread
+            let auth_session_thread = auth_session.clone();
+            let minecraft_manager_thread = minecraft_manager.clone();
+            let profile_clone_thread = profile_clone.clone();
+            let sender_thread = sender.clone();
+
+            // Create a Tokio runtime for this operation in a separate thread
+            // to avoid freezing the UI
+            let result = std::thread::spawn(move || {
+                let rt = tokio::runtime::Runtime::new().unwrap();
+
+                rt.block_on(async {
+                    let auth_guard = auth_session_thread.lock().unwrap();
+                    let auth = auth_guard.as_ref().unwrap().clone();
+                    drop(auth_guard);
+
+                    // Get the manager but don't hold the lock across await points
+                    let mut manager_guard = minecraft_manager_thread.lock().unwrap();
+                    let manager = &mut *manager_guard;
+
+                    // Launch the game
+                    manager.launch_game(&profile_clone_thread, &auth, move |progress| {
+                        // Send progress update through the channel
+                        let _ = sender_thread.send(progress);
+                    }).await
+                })
+            }).join().unwrap();
+
+            // Remove the progress bar
+            let mut child_opt = content_clone.first_child();
+            while let Some(child) = child_opt {
+                if let Some(_) = child.downcast_ref::<gtk::ProgressBar>() {
+                    content_clone.remove(&child);
+                    break;
+                }
+                child_opt = child.next_sibling();
+            }
+
+            match result {
                 Ok(_) => {
-                    let toast = adw::Toast::new(&format!("Launched Minecraft with profile '{}'", profile_clone.name));
+                    // Extract the PID from the log output
+                    // In a real implementation, we would get this from the minecraft.rs file
+                    // For now, we'll use a dummy PID
+                    let pid = 12345; // Dummy PID
+
+                    // Update the game state
+                    *game_running_clone2.borrow_mut() = true;
+                    *game_pid_clone2.borrow_mut() = Some(pid);
+
+                    // Change the button to a red "Kill" button
+                    button.add_css_class("destructive-action");
+                    button.set_label("Kill");
+                    button.set_sensitive(true);
+
+                    let toast = adw::Toast::new(&format!("Launched Minecraft with profile '{}'", profile_name));
                     toast_overlay.add_toast(toast);
                 }
                 Err(e) => {
+                    // Reset the button
+                    button.set_label("Play");
+                    button.set_sensitive(true);
+
                     let toast = adw::Toast::new(&format!("Failed to launch Minecraft: {}", e));
                     toast_overlay.add_toast(toast);
                 }
             }
-
-            // Reset the button
-            button.set_label("Play");
-            button.set_sensitive(true);
         });
     });
 

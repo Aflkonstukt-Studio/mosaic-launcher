@@ -146,60 +146,116 @@ impl FileManager {
         &self,
         zip_path: P,
         extract_to: Q,
-        exclude: Option<&[String]>,
+        exclude: Option<&Vec<String>>,
     ) -> Result<()> {
         let zip_path = zip_path.as_ref();
         let extract_to = extract_to.as_ref();
+
+        info!("Extracting zip: {} -> {}", zip_path.display(), extract_to.display());
+        if let Some(excludes) = exclude {
+            info!("Exclusion patterns: {:?}", excludes);
+        }
 
         // Create extraction directory if it doesn't exist
         self.create_dir_all(extract_to).await?;
 
         // Read the zip file
-        let zip_data = fs::read(zip_path).await?;
+        let zip_data = fs::read(zip_path).await
+            .map_err(|e| anyhow!("Failed to read zip file {}: {}", zip_path.display(), e))?;
+
+        info!("Zip file size: {} bytes", zip_data.len());
 
         // Use a separate thread for zip extraction since it's CPU-bound
         let extract_to_owned = extract_to.to_path_buf();
         let exclude_owned = exclude.map(|e| e.to_vec());
 
-        tokio::task::spawn_blocking(move || -> Result<()> {
+        let result = tokio::task::spawn_blocking(move || -> Result<usize> {
             let cursor = Cursor::new(zip_data);
-            let mut archive = ZipArchive::new(cursor)?;
+            let mut archive = ZipArchive::new(cursor)
+                .map_err(|e| anyhow!("Failed to open zip archive: {}", e))?;
+
+            let mut extracted_files = 0;
+            let total_files = archive.len();
+
+            info!("Zip archive contains {} entries", total_files);
 
             for i in 0..archive.len() {
-                let mut file = archive.by_index(i)?;
+                let mut file = archive.by_index(i)
+                    .map_err(|e| anyhow!("Failed to read zip entry {}: {}", i, e))?;
+
                 let file_path = match file.enclosed_name() {
                     Some(path) => path.to_owned(),
-                    None => continue,
+                    None => {
+                        warn!("Skipping entry {} with invalid name", i);
+                        continue;
+                    }
                 };
 
+                let file_path_str = file_path.to_string_lossy();
+                debug!("Processing zip entry: {}", file_path_str);
+
                 // Check if this file should be excluded
+                let mut should_exclude = false;
                 if let Some(exclude_list) = &exclude_owned {
-                    let file_name = file_path.to_string_lossy();
-                    if exclude_list.iter().any(|pattern| file_name.contains(pattern)) {
-                        continue;
+                    for pattern in exclude_list {
+                        // Use starts_with for directory patterns (like "META-INF/")
+                        // and exact match or contains for file patterns
+                        if pattern.ends_with('/') {
+                            // Directory pattern - check if path starts with it
+                            if file_path_str.starts_with(pattern) {
+                                should_exclude = true;
+                                debug!("Excluding {} (matches directory pattern {})", file_path_str, pattern);
+                                break;
+                            }
+                        } else {
+                            // File pattern - check if path contains it
+                            if file_path_str.contains(pattern) {
+                                should_exclude = true;
+                                debug!("Excluding {} (matches file pattern {})", file_path_str, pattern);
+                                break;
+                            }
+                        }
                     }
                 }
 
-                let target_path = extract_to_owned.join(file_path);
+                if should_exclude {
+                    continue;
+                }
+
+                let target_path = extract_to_owned.join(&file_path);
 
                 if file.is_dir() {
-                    std::fs::create_dir_all(target_path)?;
+                    debug!("Creating directory: {}", target_path.display());
+                    std::fs::create_dir_all(&target_path)
+                        .map_err(|e| anyhow!("Failed to create directory {}: {}", target_path.display(), e))?;
                 } else {
                     if let Some(parent) = target_path.parent() {
                         if !parent.exists() {
-                            std::fs::create_dir_all(parent)?;
+                            std::fs::create_dir_all(parent)
+                                .map_err(|e| anyhow!("Failed to create parent directory {}: {}", parent.display(), e))?;
                         }
                     }
 
-                    let mut target_file = File::create(target_path)?;
-                    std::io::copy(&mut file, &mut target_file)?;
+                    debug!("Extracting file: {} ({} bytes)", target_path.display(), file.size());
+                    let mut target_file = File::create(&target_path)
+                        .map_err(|e| anyhow!("Failed to create file {}: {}", target_path.display(), e))?;
+
+                    std::io::copy(&mut file, &mut target_file)
+                        .map_err(|e| anyhow!("Failed to extract file {}: {}", target_path.display(), e))?;
+
+                    extracted_files += 1;
                 }
             }
 
-            Ok(())
+            info!("Extracted {} files from {} total entries", extracted_files, total_files);
+            Ok(extracted_files)
         }).await??;
 
-        info!("Extracted zip file {:?} to {:?}", zip_path, extract_to);
+        if result == 0 {
+            warn!("No files were extracted from {}", zip_path.display());
+        }
+
+        info!("Successfully extracted {} files from {:?} to {:?}", result, zip_path, extract_to);
         Ok(())
     }
 
