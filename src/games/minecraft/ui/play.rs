@@ -11,17 +11,17 @@ use std::process::Command;
 use std::thread;
 use log::{info, warn, error, debug};
 
-use crate::auth::AuthSession;
 use crate::config::{Config, save_config};
 use crate::games::minecraft::{MinecraftManager, VersionManifest};
+use crate::games::minecraft::auth::AuthSession;
 
 pub fn build_play_view(
     window: &adw::ApplicationWindow,
     toast_overlay: &adw::ToastOverlay,
     config: Rc<RefCell<Config>>,
     minecraft_manager: Arc<Mutex<MinecraftManager>>,
-    auth_session: Arc<Mutex<Option<AuthSession>>>,
     version_manifest: Arc<Mutex<Option<VersionManifest>>>,
+    auth_session: Arc<Mutex<Option<AuthSession>>>,
 ) -> gtk::Box {
     info!("Building play view");
     // Create a vertical box for the play view
@@ -49,20 +49,47 @@ pub fn build_play_view(
     content.set_margin_end(20);
     play_box.append(&content);
 
-    // Add a profile selector
-    let profile_box = gtk::Box::new(gtk::Orientation::Horizontal, 10);
-    let profile_label = gtk::Label::new(Some("Profile:"));
-    profile_box.append(&profile_label);
+    // Add a profile selector section
+    let profile_section = gtk::Box::new(gtk::Orientation::Vertical, 10);
+    profile_section.set_margin_top(10);
+    profile_section.set_margin_bottom(10);
 
-    let profile_combo = gtk::DropDown::new(None::<gtk::StringList>, None::<gtk::Expression>);
-    let profile_model = gtk::StringList::new(&[]);
-    profile_combo.set_model(Some(&profile_model));
-    profile_combo.set_hexpand(true);
-    profile_box.append(&profile_combo);
+    // Add a header for the profile section
+    let profile_header = gtk::Box::new(gtk::Orientation::Horizontal, 10);
+    let profile_label = gtk::Label::new(Some("Profiles"));
+    profile_label.add_css_class("title-3");
+    profile_label.set_halign(gtk::Align::Start);
+    profile_label.set_hexpand(true);
+    profile_header.append(&profile_label);
 
-    content.append(&profile_box);
+    // Add a refresh button
+    let refresh_button = gtk::Button::new();
+    refresh_button.set_icon_name("view-refresh-symbolic");
+    refresh_button.set_tooltip_text(Some("Refresh profiles"));
+    refresh_button.add_css_class("flat");
+    profile_header.append(&refresh_button);
 
-    // Populate the profile selector
+    profile_section.append(&profile_header);
+
+    // Add a separator
+    let separator = gtk::Separator::new(gtk::Orientation::Horizontal);
+    profile_section.append(&separator);
+
+    // Create a scrolled window for the profiles
+    let scrolled_window = gtk::ScrolledWindow::new();
+    scrolled_window.set_min_content_height(200);
+    scrolled_window.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
+
+    // Create a list box for the profiles
+    let profile_list = gtk::ListBox::new();
+    profile_list.add_css_class("boxed-list");
+    scrolled_window.set_child(Some(&profile_list));
+    profile_section.append(&scrolled_window);
+
+    // Add the profile section to the content
+    content.append(&profile_section);
+
+    // Get the selected game and its profiles
     let config_ref = config.borrow();
     let selected_game_id = config_ref.selected_game.clone().unwrap_or_else(|| {
         if !config_ref.games.is_empty() {
@@ -84,28 +111,175 @@ pub fn build_play_view(
         });
 
     let profiles = &game.profiles;
-    let mut selected_index = 0;
+    let last_used_profile_id = config_ref.last_used_profile.clone();
 
-    if let Some(last_used) = &config_ref.last_used_profile {
-        for (i, profile) in profiles.iter().enumerate() {
-            profile_model.append(&profile.name);
-            if &profile.id == last_used {
-                selected_index = i as u32;
+    // Populate the profile list
+    for profile in profiles {
+        // Create a row for the profile
+        let row = adw::ActionRow::new();
+        row.set_title(&profile.name);
+
+        // Add subtitle with version and modloader info
+        let mut subtitle = format!("Minecraft {}", profile.version);
+        if let Some(mod_loader) = &profile.mod_loader {
+            use crate::config::ModLoader;
+            match mod_loader {
+                ModLoader::Forge => subtitle.push_str(" with Forge"),
+                ModLoader::Fabric => subtitle.push_str(" with Fabric"),
+                ModLoader::Quilt => subtitle.push_str(" with Quilt"),
+                ModLoader::NeoForge => subtitle.push_str(" with NeoForge"),
+                ModLoader::None => {}
+            }
+
+            if let Some(version) = &profile.mod_loader_version {
+                subtitle.push_str(&format!(" {}", version));
             }
         }
-    } else {
-        for profile in profiles {
-            profile_model.append(&profile.name);
+        row.set_subtitle(&subtitle);
+
+        // Add memory info as a suffix
+        if let Some(memory) = profile.memory {
+            let memory_label = gtk::Label::new(Some(&format!("{}MB", memory)));
+            memory_label.add_css_class("dim-label");
+            memory_label.add_css_class("numeric");
+            row.add_suffix(&memory_label);
+        }
+
+        // Store the profile ID in the row
+        unsafe { row.set_data("profile-id", profile.id.clone()); }
+
+        // Add the row to the list box
+        profile_list.append(&row);
+
+        // Select the row if it's the last used profile
+        if let Some(last_used) = &last_used_profile_id {
+            if last_used == &profile.id {
+                profile_list.select_row(Some(&row));
+            }
         }
     }
 
-    if !profiles.is_empty() {
-        profile_combo.set_selected(selected_index);
+    // If no row is selected, select the first one
+    if profile_list.selected_row().is_none() && !profiles.is_empty() {
+        if let Some(row) = profile_list.row_at_index(0) {
+            profile_list.select_row(Some(&row));
+        }
     }
 
-    // Add a spacer
+    // Connect the row-selected signal
+    let config_clone = config.clone();
+    let toast_overlay_clone = toast_overlay.clone();
+    profile_list.connect_row_selected(move |_, row| {
+        if let Some(row) = row {
+            if let Some(profile_id) = unsafe { row.data::<String>("profile-id") } {
+                // Convert NonNull<String> to String by dereferencing and cloning
+                let profile_id_str = unsafe { profile_id.as_ref().clone() };
+
+                // Update the last used profile in the config
+                let mut config = config_clone.borrow_mut();
+                config.last_used_profile = Some(profile_id_str.clone());
+
+                // Save the config
+                if let Err(e) = save_config(&config) {
+                    error!("Failed to save config: {}", e);
+                    let toast = adw::Toast::new(&format!("Failed to save profile selection: {}", e));
+                    toast_overlay_clone.add_toast(toast);
+                }
+            }
+        }
+    });
+
+    // Connect the refresh button
+    let profile_list_clone = profile_list.clone();
+    let config_clone = config.clone();
+    refresh_button.connect_clicked(move |_| {
+        // Clear the list box
+        while let Some(child) = profile_list_clone.first_child() {
+            profile_list_clone.remove(&child);
+        }
+
+        // Get the selected game and its profiles
+        let config_ref = config_clone.borrow();
+        let selected_game_id = config_ref.selected_game.clone().unwrap_or_else(|| {
+            if !config_ref.games.is_empty() {
+                config_ref.games[0].id.clone()
+            } else {
+                "minecraft".to_string()
+            }
+        });
+
+        let game = config_ref.games.iter()
+            .find(|g| g.id == selected_game_id)
+            .unwrap_or_else(|| {
+                // If the selected game doesn't exist, use the first game
+                if !config_ref.games.is_empty() {
+                    &config_ref.games[0]
+                } else {
+                    panic!("No games found in config")
+                }
+            });
+
+        let profiles = &game.profiles;
+        let last_used_profile_id = config_ref.last_used_profile.clone();
+
+        // Populate the profile list
+        for profile in profiles {
+            // Create a row for the profile
+            let row = adw::ActionRow::new();
+            row.set_title(&profile.name);
+
+            // Add subtitle with version and modloader info
+            let mut subtitle = format!("Minecraft {}", profile.version);
+            if let Some(mod_loader) = &profile.mod_loader {
+                use crate::config::ModLoader;
+                match mod_loader {
+                    ModLoader::Forge => subtitle.push_str(" with Forge"),
+                    ModLoader::Fabric => subtitle.push_str(" with Fabric"),
+                    ModLoader::Quilt => subtitle.push_str(" with Quilt"),
+                    ModLoader::NeoForge => subtitle.push_str(" with NeoForge"),
+                    ModLoader::None => {}
+                }
+
+                if let Some(version) = &profile.mod_loader_version {
+                    subtitle.push_str(&format!(" {}", version));
+                }
+            }
+            row.set_subtitle(&subtitle);
+
+            // Add memory info as a suffix
+            if let Some(memory) = profile.memory {
+                let memory_label = gtk::Label::new(Some(&format!("{}MB", memory)));
+                memory_label.add_css_class("dim-label");
+                memory_label.add_css_class("numeric");
+                row.add_suffix(&memory_label);
+            }
+
+            // Store the profile ID in the row
+            unsafe { row.set_data("profile-id", profile.id.clone()); }
+
+            // Add the row to the list box
+            profile_list_clone.append(&row);
+
+            // Select the row if it's the last used profile
+            if let Some(last_used) = &last_used_profile_id {
+                if last_used == &profile.id {
+                    profile_list_clone.select_row(Some(&row));
+                }
+            }
+        }
+
+        // If no row is selected, select the first one
+        if profile_list_clone.selected_row().is_none() && !profiles.is_empty() {
+            if let Some(row) = profile_list_clone.row_at_index(0) {
+                profile_list_clone.select_row(Some(&row));
+            }
+        }
+    });
+
+    // Add a smaller spacer to position the play button higher
     let spacer = gtk::Box::new(gtk::Orientation::Vertical, 0);
     spacer.set_vexpand(true);
+    spacer.set_size_request(-1, 50); // Limit the height to 50 pixels
     content.append(&spacer);
 
     // Add a play button
@@ -125,18 +299,11 @@ pub fn build_play_view(
     login_message.set_visible(false);
     content.append(&login_message);
 
-    // Check if user is logged in and update UI accordingly
-    if auth_session.lock().unwrap().is_none() {
-        play_button.set_sensitive(false);
-        login_message.set_visible(true);
-    }
-
     // Connect the play button
     let config_clone = config.clone();
     let minecraft_manager_clone = minecraft_manager.clone();
-    let auth_session_clone = auth_session.clone();
     let toast_overlay_clone = toast_overlay.clone();
-    let profile_combo_clone = profile_combo.clone();
+    let profile_list_clone = profile_list.clone();
     let login_message_clone = login_message.clone();
     let game_running_clone = game_running.clone();
     let game_pid_clone = game_pid.clone();
@@ -184,23 +351,28 @@ pub fn build_play_view(
             return;
         }
 
-        // Check if user is logged in
-        if auth_session_clone.lock().unwrap().is_none() {
-            let toast = adw::Toast::new("You need to sign in to play Minecraft");
-            toast_overlay_clone.add_toast(toast);
-            login_message_clone.set_visible(true);
-            return;
-        }
-
-        let selected = profile_combo_clone.selected();
-        if selected == gtk::INVALID_LIST_POSITION {
+        // Get the selected profile from the profile list
+        let selected_row = profile_list_clone.selected_row();
+        if selected_row.is_none() {
             let toast = adw::Toast::new("No profile selected");
             toast_overlay_clone.add_toast(toast);
             return;
         }
 
-        // Get profiles from the selected game and extract the profile ID
+        // Get the profile ID from the selected row
         let profile_id = {
+            let row = selected_row.unwrap();
+            let profile_id = unsafe { row.data::<String>("profile-id") };
+            if profile_id.is_none() {
+                let toast = adw::Toast::new("Invalid profile selected");
+                toast_overlay_clone.add_toast(toast);
+                return;
+            }
+
+            // Convert NonNull<String> to String by dereferencing and cloning
+            let profile_id_str = unsafe { profile_id.unwrap().as_ref().clone() };
+
+            // Get the profile from the config
             let config_ref = config_clone.borrow();
             let selected_game_id = config_ref.selected_game.clone().unwrap_or_else(|| {
                 if !config_ref.games.is_empty() {
@@ -221,21 +393,20 @@ pub fn build_play_view(
                     }
                 });
 
-            let profiles = &game.profiles;
-            if selected as usize >= profiles.len() {
-                let toast = adw::Toast::new("Invalid profile selected");
+            let profile = game.profiles.iter()
+                .find(|p| p.id == profile_id_str)
+                .cloned();
+
+            if profile.is_none() {
+                let toast = adw::Toast::new("Profile not found");
                 toast_overlay_clone.add_toast(toast);
                 return;
             }
 
-            let profile = &profiles[selected as usize];
-            let profile_clone = profile.clone();
-
-            // Store the profile ID for later use
-            let profile_id = profile.id.clone();
+            let profile_clone = profile.unwrap();
 
             // Return both the profile clone and the profile ID
-            (profile_clone, profile_id)
+            (profile_clone, profile_id_str)
         };
 
         let (profile_clone, profile_id) = profile_id;
@@ -308,13 +479,13 @@ pub fn build_play_view(
 
         // Clone references for the async closure
         let minecraft_manager = minecraft_manager_clone.clone();
-        let auth_session = auth_session_clone.clone();
         let toast_overlay = toast_overlay_clone.clone();
         let button = button.clone();
         let sender = sender.clone();
         let content_clone = content.clone();
         let game_running_clone2 = game_running_clone.clone();
         let game_pid_clone2 = game_pid_clone.clone();
+        let auth_session_clone = auth_session.clone();
 
         // Clone profile_clone for use after the async block
         let profile_name = profile_clone.name.clone();
@@ -324,10 +495,10 @@ pub fn build_play_view(
             button.set_sensitive(false);
 
             // Clone variables for the thread
-            let auth_session_thread = auth_session.clone();
             let minecraft_manager_thread = minecraft_manager.clone();
             let profile_clone_thread = profile_clone.clone();
             let sender_thread = sender.clone();
+            let auth_session_thread = auth_session_clone.clone();
 
             // Create a Tokio runtime for this operation in a separate thread
             // to avoid freezing the UI

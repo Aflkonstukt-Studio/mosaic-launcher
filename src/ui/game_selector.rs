@@ -76,8 +76,36 @@ pub fn build_game_selector(
         let icon = gtk::Image::from_icon_name(icon_name);
         row.add_prefix(&icon);
 
+        // Add a select button
+        let select_button = gtk::Button::new();
+        select_button.set_icon_name("go-next-symbolic");
+        select_button.set_tooltip_text(Some("Select this game"));
+        select_button.add_css_class("flat");
+        row.add_suffix(&select_button);
+
         // Store the game ID in the row
         unsafe { row.set_data("game-id", game.id.clone()); }
+
+        // Connect the select button click event
+        let game_id = game.id.clone();
+        let config_clone = config_clone.clone();
+        let toast_overlay_clone = toast_overlay.clone();
+        select_button.connect_clicked(move |_| {
+            // Update the selected game in the config
+            let mut config = config_clone.borrow_mut();
+            config.selected_game = Some(game_id.clone());
+
+            // Save the config
+            if let Err(e) = save_config(&config) {
+                error!("Failed to save config: {}", e);
+                let toast = adw::Toast::new(&format!("Failed to save game selection: {}", e));
+                toast_overlay_clone.add_toast(toast);
+            } else {
+                info!("Selected game: {}", game_id);
+                let toast = adw::Toast::new(&format!("Selected game: {}", game_id));
+                toast_overlay_clone.add_toast(toast);
+            }
+        });
 
         // Add the row to the list box
         list_box.append(&row);
@@ -93,31 +121,8 @@ pub fn build_game_selector(
         }
     }
 
-    // Connect the row-selected signal
-    let toast_overlay_clone = toast_overlay.clone();
-    list_box.connect_row_selected(move |_, row| {
-        if let Some(row) = row {
-            if let Some(game_id) = unsafe { row.data::<String>("game-id") } {
-                // Convert NonNull<String> to String by dereferencing and cloning
-                let game_id_str = unsafe { game_id.as_ref().clone() };
-
-                // Update the selected game in the config
-                let mut config = config_clone.borrow_mut();
-                config.selected_game = Some(game_id_str.clone());
-
-                // Save the config
-                if let Err(e) = save_config(&config) {
-                    error!("Failed to save config: {}", e);
-                    let toast = adw::Toast::new(&format!("Failed to save game selection: {}", e));
-                    toast_overlay_clone.add_toast(toast);
-                } else {
-                    info!("Selected game: {}", game_id_str);
-                    let toast = adw::Toast::new(&format!("Selected game: {}", game_id_str));
-                    toast_overlay_clone.add_toast(toast);
-                }
-            }
-        }
-    });
+    // Note: We don't connect a row-selected handler here
+    // The app.rs file will handle row selection and navigation
 
     // Add a button to add a new game
     let add_button = gtk::Button::with_label("Add Custom Game");

@@ -77,7 +77,7 @@ impl AuthManager {
 
     pub fn start_login(&self) -> Result<DeviceAuthorizationResponse<EmptyExtraDeviceAuthorizationFields>> {
         let scopes = vec![
-            "XboxLive.signin".to_string(),
+            "XboxLive.SignIn".to_string(),
             "XboxLive.offline_access".to_string(),
         ];
 

@@ -5,9 +5,10 @@ use reqwest::blocking::Client as HttpClient;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::rc::Rc;
 use log::{info, warn, error, debug};
 
-use crate::auth::AuthSession;
+use crate::games::minecraft::auth::AuthSession;
 use crate::config::{Config, Profile, ModLoader};
 use crate::file_manager::{FileManager, DownloadProgress};
 
@@ -31,13 +32,13 @@ pub struct MinecraftManager {
 
 impl MinecraftManager {
     /// Create a new Minecraft manager
-    pub fn new(config: Config, file_manager: FileManager) -> Self {
+    pub fn new(config: Config, file_manager: Rc<FileManager>) -> Self {
         // Get the Minecraft directory from the config
         let minecraft_directory = Self::get_minecraft_directory_from_config(&config);
 
         Self {
             http_client: HttpClient::new(),
-            file_manager,
+            file_manager: (*file_manager).clone(),
             config,
             modloader_versions_cache: HashMap::new(),
             minecraft_directory,
@@ -52,6 +53,11 @@ impl MinecraftManager {
     /// Set the Minecraft directory
     pub fn set_minecraft_directory(&mut self, directory: PathBuf) {
         self.minecraft_directory = directory;
+    }
+
+    /// Get the config
+    pub fn get_config(&self) -> &Config {
+        &self.config
     }
 
     /// Get the profiles for this game

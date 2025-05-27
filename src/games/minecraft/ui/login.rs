@@ -9,11 +9,14 @@ use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 use log::{info, warn, error, debug};
 
-use crate::auth::{AuthManager, AuthSession};
+use crate::games::minecraft::auth::{AuthManager, AuthSession};
 use crate::config::Config;
+use crate::file_manager::FileManager;
+use crate::games::GamePluginManager;
 
+/// Build a login view for Minecraft
 pub fn build_login_view(
-    window: &adw::ApplicationWindow,
+    window: &gtk::Window,
     toast_overlay: &adw::ToastOverlay,
     auth_manager: Rc<AuthManager>,
     auth_session: Arc<Mutex<Option<AuthSession>>>,
@@ -30,7 +33,7 @@ pub fn build_login_view(
     login_box.set_valign(gtk::Align::Center);
 
     // Add a logo or title
-    let title = gtk::Label::new(Some("Mosaic Launcher"));
+    let title = gtk::Label::new(Some("Minecraft"));
     title.add_css_class("title-1");
     login_box.append(&title);
 
@@ -307,8 +310,33 @@ pub fn build_login_view(
                                         let toast = adw::Toast::new("Successfully signed in");
                                         toast_overlay.add_toast(toast);
 
-                                        // Switch to the main view
-                                        stack.set_visible_child_name("main");
+                                        // Create a name for the main view in the stack
+                                        let main_view_name = "minecraft_main";
+
+                                        // Check if the main view exists in the stack
+                                        if stack.child_by_name(main_view_name).is_none() {
+                                            // Create the main view for Minecraft using the new main_view module
+                                            let file_manager = Rc::new(FileManager::new());
+                                            let game_plugin_manager = Arc::new(Mutex::new(GamePluginManager::new(config.clone(), file_manager.clone())));
+
+                                            let main_view = crate::games::minecraft::ui::main_view::build_main_view(
+                                                window.as_ref(),
+                                                &toast_overlay,
+                                                config.clone(),
+                                                game_plugin_manager,
+                                                file_manager,
+                                                auth_session.clone(),
+                                            );
+
+                                            // Add the main view to the stack
+                                            stack.add_named(&main_view, Some(main_view_name));
+                                        }
+
+                                        // Switch to the Minecraft main view
+                                        stack.set_visible_child_name(main_view_name);
+
+                                        // Log that we're switching to the Minecraft main view
+                                        info!("Switching to main view after successful authentication");
                                     }
                                     Err(e) => {
                                         // Check if the error is related to sandbox issues
@@ -455,8 +483,33 @@ pub fn build_login_view(
                         let toast = adw::Toast::new(&format!("Playing as {} (offline mode)", username));
                         toast_overlay.add_toast(toast);
 
-                        // Switch to the main view
-                        stack.set_visible_child_name("main");
+                        // Create a name for the main view in the stack
+                        let main_view_name = "minecraft_main";
+
+                        // Check if the main view exists in the stack
+                        if stack.child_by_name(main_view_name).is_none() {
+                            // Create the main view for Minecraft using the new main_view module
+                            let file_manager = Rc::new(FileManager::new());
+                            let game_plugin_manager = Arc::new(Mutex::new(GamePluginManager::new(config.clone(), file_manager.clone())));
+
+                            let main_view = crate::games::minecraft::ui::main_view::build_main_view(
+                                window,
+                                &toast_overlay,
+                                config.clone(),
+                                game_plugin_manager,
+                                file_manager,
+                                auth_session.clone(),
+                            );
+
+                            // Add the main view to the stack
+                            stack.add_named(&main_view, Some(main_view_name));
+                        }
+
+                        // Switch to the Minecraft main view
+                        stack.set_visible_child_name(main_view_name);
+
+                        // Log that we're switching to the Minecraft main view
+                        info!("Switching to main view after successful offline authentication");
                     }
                     Err(e) => {
                         // Show error toast
@@ -471,8 +524,6 @@ pub fn build_login_view(
         dialog.present();
     });
     login_box.append(&offline_button);
-
-    // Note: "Continue without logging in" option removed - users should use offline mode instead
 
     // Add some space
     let spacer = gtk::Box::new(gtk::Orientation::Vertical, 0);

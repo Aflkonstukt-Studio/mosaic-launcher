@@ -6,9 +6,23 @@ pub mod minecraft;
 use anyhow::Result;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
+use std::rc::Rc;
+use std::cell::RefCell;
+use serde::{Serialize, Deserialize};
 use crate::config::{Config, Profile};
 use crate::file_manager::{FileManager, DownloadProgress};
-use crate::auth::AuthSession;
+use crate::games::minecraft::auth::AuthSession;
+
+/// Enum representing the UI type for a game plugin
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum GamePluginUIType {
+    /// Use the predefined UI (basic play button, profiles, mods if supported)
+    Predefined,
+    /// Modify the UI using JSON
+    JSONCustomized,
+    /// Create a custom UI using GTK4
+    CustomGTK,
+}
 
 /// Trait that all game plugins must implement
 pub trait GamePlugin: Send + Sync {
@@ -48,11 +62,59 @@ pub trait GamePlugin: Send + Sync {
     /// Get available versions
     fn get_available_versions(&self) -> Result<Vec<String>>;
 
-    /// Get available modloader versions for a specific Minecraft version
+    /// Get available modloader versions for a specific game version
     fn get_modloader_versions(&mut self, mod_loader_type: &str, game_version: &str) -> Result<Vec<String>>;
 
     /// Install a specific version
     fn install_version(&self, version_id: &str, progress_callback: Box<dyn Fn(DownloadProgress) + Send + Sync + 'static>) -> Result<()>;
+
+    /// Get the UI type for this game plugin
+    fn get_ui_type(&self) -> GamePluginUIType {
+        // Default to predefined UI
+        GamePluginUIType::Predefined
+    }
+
+    /// Get the JSON UI customization for this game plugin
+    /// This is only used if get_ui_type() returns GamePluginUIType::JSONCustomized
+    fn get_json_ui_customization(&self) -> Option<serde_json::Value> {
+        None
+    }
+
+    /// Get the mod search and download URL for this game plugin
+    /// This is used by the predefined UI to search for and download mods
+    fn get_mod_search_url(&self) -> Option<String> {
+        None
+    }
+
+    /// Get the mod download URL for this game plugin
+    /// This is used by the predefined UI to download mods
+    fn get_mod_download_url(&self) -> Option<String> {
+        None
+    }
+
+    /// Handle game selection
+    /// This method is called when the game is selected in the game selector
+    /// It should handle any game-specific UI or logic that needs to happen when the game is selected
+    /// For example, showing a login screen for games that require authentication
+    /// 
+    /// Parameters:
+    /// - window: The application window
+    /// - toast_overlay: The toast overlay for showing notifications
+    /// - stack: The stack for navigating between views
+    /// - auth_session: The authentication session
+    /// - config: The application configuration
+    /// 
+    /// Returns:
+    /// - Ok(()): If the game selection was handled successfully
+    /// - Err(e): If there was an error handling the game selection
+    fn handle_game_selection(
+        &self,
+        window: &gtk4::Window,
+        toast_overlay: &libadwaita::ToastOverlay,
+        stack: &gtk4::Stack,
+        auth_session: Arc<Mutex<Option<AuthSession>>>,
+        config: Rc<RefCell<Config>>,
+    ) -> Result<()>;
 }
 
 /// Factory for creating game plugins
@@ -67,20 +129,20 @@ pub trait GamePluginFactory: Send + Sync {
     fn get_icon_name(&self) -> &str;
 
     /// Create a new instance of the game plugin
-    fn create(&self, config: Config, file_manager: FileManager) -> Box<dyn GamePlugin>;
+    fn create(&self, config: Config, file_manager: Rc<FileManager>) -> Box<dyn GamePlugin>;
 }
 
 /// Manager for game plugins
 pub struct GamePluginManager {
     plugins: Vec<Box<dyn GamePlugin>>,
     factories: Vec<Box<dyn GamePluginFactory>>,
-    config: Arc<Mutex<Config>>,
-    file_manager: FileManager,
+    config: Rc<RefCell<Config>>,
+    file_manager: Rc<FileManager>,
 }
 
 impl GamePluginManager {
     /// Create a new game plugin manager
-    pub fn new(config: Arc<Mutex<Config>>, file_manager: FileManager) -> Self {
+    pub fn new(config: Rc<RefCell<Config>>, file_manager: Rc<FileManager>) -> Self {
         Self {
             plugins: Vec::new(),
             factories: Vec::new(),
@@ -96,7 +158,7 @@ impl GamePluginManager {
 
     /// Initialize plugins from config
     pub fn initialize_plugins(&mut self) {
-        let config = self.config.lock().unwrap().clone();
+        let config = self.config.borrow().clone();
 
         for factory in &self.factories {
             let plugin = factory.create(config.clone(), self.file_manager.clone());

@@ -48,6 +48,7 @@ pub struct Profile {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(PartialEq)]
 pub enum ModLoader {
     Forge,
     Fabric,

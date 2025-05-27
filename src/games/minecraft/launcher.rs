@@ -7,7 +7,7 @@ use std::process::{Command, Stdio, Child};
 use std::collections::HashMap;
 
 use crate::config::Profile;
-use crate::auth::AuthSession;
+use crate::games::minecraft::auth::AuthSession;
 use super::models::{VersionDetails, Arguments};
 use super::versions;
 
@@ -46,7 +46,14 @@ pub async fn launch_game(
     command.arg("-XX:MaxGCPauseMillis=50");
     command.arg("-XX:G1HeapRegionSize=32M");
     command.arg("-Dfile.encoding=UTF-8");
-    command.arg("-Djava.library.path=natives");
+    // Set the path to the natives directory
+    // Use the full path to the natives directory to ensure LWJGL can find the native libraries
+    // This fixes the "Failed to locate library: liblwjgl.so" error
+    let natives_dir = minecraft_dir.join("versions").join(&version_details.id).join("natives");
+    command.arg(format!("-Djava.library.path={}", natives_dir.to_string_lossy()));
+
+    // Also set the LWJGL library path as a backup
+    command.arg(format!("-Dorg.lwjgl.librarypath={}", natives_dir.to_string_lossy()));
     command.arg("-Dminecraft.launcher.brand=MosaicLauncher");
     command.arg("-Dminecraft.launcher.version=1.0.0");
     command.arg("-Dorg.lwjgl.util.DebugLoader=true");
@@ -330,14 +337,21 @@ fn should_include_argument(obj: &serde_json::Map<String, serde_json::Value>) -> 
 /// Replaces placeholders in arguments
 fn replace_placeholders(
     arg: &str,
-    minecraft_profile: &crate::auth::MinecraftProfile,
-    auth_session: &crate::auth::AuthSession,
+    minecraft_profile: &super::auth::MinecraftProfile,
+    auth_session: &super::auth::AuthSession,
     version_id: &str,
     game_dir: &Path,
     assets_dir: &Path,
     assets_index: &str,
     assets_path: &str,
 ) -> Result<String> {
+    // Determine the user type based on whether this is an offline session
+    let user_type = if auth_session.is_offline {
+        "mojang" // Use "mojang" for offline sessions to avoid demo mode
+    } else {
+        "msa" // Use "msa" for Microsoft Account sessions
+    };
+
     let arg = arg.replace("${auth_player_name}", &minecraft_profile.name)
         .replace("${version_name}", version_id)
         .replace("${game_directory}", &game_dir.to_string_lossy())
@@ -345,7 +359,7 @@ fn replace_placeholders(
         .replace("${assets_index_name}", assets_index)
         .replace("${auth_uuid}", &minecraft_profile.id)
         .replace("${auth_access_token}", &auth_session.access_token)
-        .replace("${user_type}", "msa")
+        .replace("${user_type}", user_type)
         .replace("${version_type}", "release")
         .replace("${user_properties}", "{}")
         .replace("${auth_session}", &format!("token:{}", auth_session.access_token))

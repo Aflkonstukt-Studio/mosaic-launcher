@@ -5,14 +5,22 @@ mod manager;
 mod modloaders;
 mod versions;
 mod launcher;
+pub mod auth;
+pub mod ui;
 
 use anyhow::Result;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+use std::rc::Rc;
+use std::cell::RefCell;
+use gtk4 as gtk;
+use libadwaita as adw;
 use crate::config::{Config, Profile};
-use crate::file_manager::{FileManager, DownloadProgress};
-use crate::auth::AuthSession;
-use crate::games::{GamePlugin, GamePluginFactory};
+use crate::file_manager::{DownloadProgress, FileManager};
+use self::auth::{AuthManager, AuthSession};
+use crate::games::{GamePlugin, GamePluginFactory, GamePluginUIType};
+use crate::mods::ModManager;
+use crate::games::minecraft::ui::login::build_login_view;
 
 pub use self::manager::MinecraftManager;
 pub use self::models::VersionManifest;
@@ -20,17 +28,21 @@ pub use self::models::VersionManifest;
 /// Minecraft game plugin
 pub struct MinecraftPlugin {
     manager: MinecraftManager,
+    mod_manager: MinecraftManager,
     id: String,
     name: String,
+    ui_type: GamePluginUIType,
 }
 
 impl MinecraftPlugin {
     /// Create a new Minecraft game plugin
-    pub fn new(config: Config, file_manager: FileManager) -> Self {
+    pub fn new(config: Config, file_manager: Rc<FileManager>) -> Self {
         Self {
-            manager: MinecraftManager::new(config, file_manager),
+            manager: MinecraftManager::new(config.clone(), file_manager.clone()),
+            mod_manager: MinecraftManager::new(config, file_manager),
             id: "minecraft".to_string(),
             name: "Minecraft".to_string(),
+            ui_type: GamePluginUIType::Predefined,
         }
     }
 }
@@ -117,6 +129,51 @@ impl GamePlugin for MinecraftPlugin {
         let rt = tokio::runtime::Runtime::new()?;
         rt.block_on(self.manager.install_version(version_id, wrapper))
     }
+
+    fn get_ui_type(&self) -> GamePluginUIType {
+        GamePluginUIType::Predefined
+    }
+
+    fn get_mod_search_url(&self) -> Option<String> {
+        Some("https://api.modrinth.com/v2/search".to_string())
+    }
+
+    fn get_mod_download_url(&self) -> Option<String> {
+        Some("https://api.modrinth.com/v2/project".to_string())
+    }
+
+    fn handle_game_selection(
+        &self,
+        window: &gtk::Window,
+        toast_overlay: &adw::ToastOverlay,
+        stack: &gtk::Stack,
+        auth_session: Arc<Mutex<Option<AuthSession>>>,
+        config: Rc<RefCell<Config>>,
+    ) -> Result<()> {
+        // Create a new AuthManager
+        let auth_manager = Rc::new(AuthManager::new());
+
+        // Build the login view
+        let login_view = build_login_view(
+            window,
+            toast_overlay,
+            auth_manager,
+            auth_session,
+            stack,
+            config,
+        );
+
+        // Create a name for the login view in the stack
+        let login_view_name = format!("{}_login", self.get_id());
+
+        // Add the login view to the stack
+        stack.add_named(&login_view, Some(&login_view_name));
+
+        // Show the login view
+        stack.set_visible_child_name(&login_view_name);
+
+        Ok(())
+    }
 }
 
 /// Factory for creating Minecraft game plugins
@@ -135,7 +192,7 @@ impl GamePluginFactory for MinecraftPluginFactory {
         "applications-games-symbolic"
     }
 
-    fn create(&self, config: Config, file_manager: FileManager) -> Box<dyn GamePlugin> {
+    fn create(&self, config: Config, file_manager: Rc<FileManager>) -> Box<dyn GamePlugin> {
         Box::new(MinecraftPlugin::new(config, file_manager))
     }
 }

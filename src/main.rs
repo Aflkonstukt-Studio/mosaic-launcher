@@ -1,10 +1,9 @@
-mod auth;
 mod games;
-mod mods;
 mod ui;
 mod file_manager;
 mod config;
 mod utils;
+mod mods;
 
 use anyhow::Result;
 use log::{info, error};
