@@ -1,0 +1,819 @@
+<!-- Minecraft Main Interface Plugin - Windows 11 Native Style -->
+<div class="minecraft-app">
+    <!-- Title Bar -->
+    <div class="title-bar">
+        <div class="title-bar-left">
+            <button class="title-bar-button back-button" onclick="goBackToGameSelection()" title="Back to Games">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M7.707 3.293a1 1 0 0 0-1.414 0L2.586 7h11.414a1 1 0 1 1 0 2H2.586l3.707 3.707a1 1 0 0 1-1.414 1.414l-5-5a1 1 0 0 1 0-1.414l5-5a1 1 0 0 1 1.414 0z"/>
+                </svg>
+            </button>
+            <div class="title-info">
+                <div class="app-icon">⛏️</div>
+                <div class="title-text">
+                    <h1>Minecraft</h1>
+                    <span class="subtitle">Java Edition</span>
+                </div>
+            </div>
+        </div>
+        <div class="title-bar-right">
+            <div class="user-pill" id="userPill">
+                <div class="user-avatar-small" id="userAvatarSmall">U</div>
+                <span class="user-name-small" id="userNameSmall">Player</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-body">
+        <!-- Navigation Rail -->
+        <nav class="nav-rail">
+            <div class="nav-items">
+                <button class="nav-item active" data-content="play" title="Play">
+                    <div class="nav-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                    </div>
+                    <span class="nav-label">Play</span>
+                </button>
+                
+                <button class="nav-item" data-content="profiles" title="Profiles">
+                    <div class="nav-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                        </svg>
+                    </div>
+                    <span class="nav-label">Profiles</span>
+                </button>
+                
+                <button class="nav-item" data-content="mods" title="Mods">
+                    <div class="nav-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                        </svg>
+                    </div>
+                    <span class="nav-label">Mods</span>
+                </button>
+                
+                <button class="nav-item" data-content="settings" title="Settings">
+                    <div class="nav-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.82,11.69,4.82,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                        </svg>
+                    </div>
+                    <span class="nav-label">Settings</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-container">
+                <header class="content-header">
+                    <h2 class="content-title" id="contentTitle">Play</h2>
+                    <div class="content-actions" id="contentActions">
+                        <!-- Dynamic action buttons will be added here -->
+                    </div>
+                </header>
+                
+                <div class="content-body" id="contentBody">
+                    <div class="loading-state">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<style>
+/* Windows 11 Native Style CSS */
+:root {
+    /* Windows 11 Fluent Design Colors */
+    --win11-surface: #F3F3F3;
+    --win11-surface-alt: #FAFAFA;
+    --win11-surface-elevated: #FFFFFF;
+    --win11-background: #F5F5F5;
+    --win11-stroke: #E1E1E1;
+    --win11-stroke-subtle: #F0F0F0;
+    --win11-text-primary: #1C1C1C;
+    --win11-text-secondary: #616161;
+    --win11-text-tertiary: #8A8A8A;
+    --win11-accent: #0078D4;
+    --win11-accent-light: #106EBE;
+    --win11-accent-dark: #005A9E;
+    --win11-shadow-elevation-low: 0 1px 3px rgba(0,0,0,0.12);
+    --win11-shadow-elevation-medium: 0 3px 8px rgba(0,0,0,0.15);
+    --win11-shadow-elevation-high: 0 8px 24px rgba(0,0,0,0.20);
+    --win11-radius-small: 4px;
+    --win11-radius-medium: 8px;
+    --win11-radius-large: 12px;
+}
+
+/* Dark theme overrides */
+[data-theme="dark"] {
+    --win11-surface: #2C2C2C;
+    --win11-surface-alt: #282828;
+    --win11-surface-elevated: #323232;
+    --win11-background: #202020;
+    --win11-stroke: #414141;
+    --win11-stroke-subtle: #373737;
+    --win11-text-primary: #FFFFFF;
+    --win11-text-secondary: #C7C7C7;
+    --win11-text-tertiary: #8A8A8A;
+    --win11-accent: #60CDFF;
+    --win11-accent-light: #4FC3F7;
+    --win11-accent-dark: #0078D4;
+}
+
+.minecraft-app {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--win11-background);
+    color: var(--win11-text-primary);
+    font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* Title Bar */
+.title-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 48px;
+    padding: 0 16px;
+    background: var(--win11-surface-elevated);
+    border-bottom: 1px solid var(--win11-stroke);
+    position: relative;
+    z-index: 100;
+}
+
+.title-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.title-bar-button {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: var(--win11-radius-small);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--win11-text-secondary);
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.title-bar-button:hover {
+    background: var(--win11-stroke-subtle);
+    color: var(--win11-text-primary);
+}
+
+.title-bar-button:active {
+    background: var(--win11-stroke);
+    transform: scale(0.96);
+}
+
+.title-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.app-icon {
+    font-size: 20px;
+}
+
+.title-text h1 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--win11-text-primary);
+    line-height: 1.2;
+}
+
+.title-text .subtitle {
+    font-size: 12px;
+    color: var(--win11-text-secondary);
+    font-weight: 400;
+}
+
+.user-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px 4px 4px;
+    background: var(--win11-surface);
+    border: 1px solid var(--win11-stroke);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.user-pill:hover {
+    background: var(--win11-surface-alt);
+    border-color: var(--win11-accent);
+}
+
+.user-avatar-small {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--win11-accent);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.user-name-small {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--win11-text-primary);
+}
+
+/* App Body */
+.app-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Navigation Rail */
+.nav-rail {
+    width: 88px;
+    background: var(--win11-surface);
+    border-right: 1px solid var(--win11-stroke);
+    display: flex;
+    flex-direction: column;
+    padding: 8px 0;
+}
+
+.nav-items {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 8px;
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 8px;
+    border: none;
+    background: transparent;
+    border-radius: var(--win11-radius-medium);
+    cursor: pointer;
+    color: var(--win11-text-secondary);
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    min-height: 68px;
+}
+
+.nav-item::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 16px;
+    background: var(--win11-accent);
+    border-radius: 2px;
+    opacity: 0;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-item:hover {
+    background: var(--win11-stroke-subtle);
+    color: var(--win11-text-primary);
+}
+
+.nav-item.active {
+    background: var(--win11-accent);
+    color: var(--win11-accent-text, white);
+}
+
+.nav-item.active::before {
+    opacity: 1;
+}
+
+.nav-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+}
+
+.nav-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--win11-surface-elevated);
+    overflow: hidden;
+}
+
+.content-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.content-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 32px 16px 32px;
+    border-bottom: 1px solid var(--win11-stroke);
+    background: var(--win11-surface-elevated);
+}
+
+.content-title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--win11-text-primary);
+    line-height: 1.2;
+}
+
+.content-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.content-body {
+    flex: 1;
+    padding: 24px 32px;
+    overflow-y: auto;
+    background: var(--win11-surface-elevated);
+}
+
+/* Loading State */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    gap: 16px;
+}
+
+.loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--win11-stroke);
+    border-top: 3px solid var(--win11-accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.loading-text {
+    color: var(--win11-text-secondary);
+    font-size: 14px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Animations */
+.content-body {
+    animation: fadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--win11-stroke);
+    border-radius: 6px;
+    border: 2px solid var(--win11-surface-elevated);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--win11-text-tertiary);
+}
+
+/* Focus styles */
+.title-bar-button:focus-visible,
+.nav-item:focus-visible,
+.user-pill:focus-visible {
+    outline: 2px solid var(--win11-accent);
+    outline-offset: 2px;
+}
+
+/* Button styles for content */
+.win11-button {
+    padding: 8px 16px;
+    border: 1px solid var(--win11-stroke);
+    background: var(--win11-surface);
+    color: var(--win11-text-primary);
+    border-radius: var(--win11-radius-small);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.win11-button:hover {
+    background: var(--win11-surface-alt);
+    border-color: var(--win11-accent);
+}
+
+.win11-button.accent {
+    background: var(--win11-accent);
+    border-color: var(--win11-accent);
+    color: var(--win11-accent-text, white);
+}
+
+.win11-button.accent:hover {
+    background: var(--win11-accent-light);
+    border-color: var(--win11-accent-light);
+}
+
+.win11-button:active {
+    transform: scale(0.98);
+}
+</style>
+
+<script>
+// Minecraft Main Interface Functions - Windows 11 Style
+console.log('=== MAIN.HTML SCRIPT STARTING ===');
+
+// Global variables
+let currentAuthSession = null;
+let currentContent = 'play';
+
+// Initialize the main interface
+console.log('Setting up MinecraftMain object...');
+window.MinecraftMain = {
+    initialize: function(authSession) {
+        console.log('=== MinecraftMain.initialize CALLED ===');
+        console.log('Initializing Minecraft main interface with auth session:', authSession);
+        currentAuthSession = authSession;
+        
+        // Update user info based on auth session
+        updateUserInfo(authSession);
+        
+        // Initialize the interface if not already done
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                setupNavigation();
+                showContent('play');
+            });
+        } else {
+            // DOM already loaded, initialize immediately
+            setupNavigation();
+            showContent('play');
+        }
+    }
+};
+console.log('MinecraftMain object created:', window.MinecraftMain);
+
+function setupNavigation() {
+    console.log('Setting up navigation...');
+    const navItems = document.querySelectorAll('.nav-item');
+    console.log('Found nav items:', navItems.length);
+    
+    navItems.forEach((item, index) => {
+        const contentId = item.dataset.content;
+        console.log(`Setting up nav item ${index}: ${contentId}`);
+        
+        // Remove any existing event listeners by cloning the node
+        const newItem = item.cloneNode(true);
+        item.parentNode.replaceChild(newItem, item);
+        
+        newItem.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const targetContentId = e.currentTarget.dataset.content;
+            console.log('Nav item clicked:', targetContentId);
+            showContent(targetContentId);
+        });
+        
+        // Also add keyboard support
+        newItem.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                const targetContentId = e.currentTarget.dataset.content;
+                console.log('Nav item activated via keyboard:', targetContentId);
+                showContent(targetContentId);
+            }
+        });
+        
+        // Make sure it's focusable
+        newItem.setAttribute('tabindex', '0');
+    });
+    
+    console.log('Navigation setup complete');
+}
+
+function updateUserInfo(authSession) {
+    const userAvatarSmall = document.getElementById('userAvatarSmall');
+    const userNameSmall = document.getElementById('userNameSmall');
+    
+    if (authSession && authSession.username) {
+        userNameSmall.textContent = authSession.username;
+        userAvatarSmall.textContent = authSession.username.charAt(0).toUpperCase();
+    } else {
+        userNameSmall.textContent = 'Player';
+        userAvatarSmall.textContent = 'P';
+    }
+}
+
+function goBackToGameSelection() {
+    if (window.MosaicLauncher) {
+        window.MosaicLauncher.goBackToGameSelection();
+    }
+}
+
+async function showContent(contentId) {
+    console.log('Showing content:', contentId);
+    
+    // Update active navigation item
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    const activeNavItem = document.querySelector(`[data-content="${contentId}"]`);
+    if (activeNavItem) {
+        activeNavItem.classList.add('active');
+    }
+    
+    // Update header title
+    const titles = {
+        'play': 'Play',
+        'profiles': 'Profiles', 
+        'mods': 'Mods',
+        'settings': 'Settings'
+    };
+    
+    const contentTitle = document.getElementById('contentTitle');
+    if (contentTitle) {
+        contentTitle.textContent = titles[contentId] || contentId;
+    }
+    
+    // Load content
+    currentContent = contentId;
+    await loadContentView(contentId);
+}
+
+async function loadContentView(contentId) {
+    const contentBody = document.getElementById('contentBody');
+    
+    try {
+        // Show loading state
+        contentBody.innerHTML = `
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Loading ${contentId}...</div>
+            </div>
+        `;
+        
+        // Load the specific content view - use absolute path from plugins directory
+        const response = await fetch(`./plugins/minecraft/${contentId}.html`);
+        if (response.ok) {
+            const html = await response.text();
+            
+            // Animate content change
+            contentBody.style.opacity = '0';
+            setTimeout(() => {
+                contentBody.innerHTML = html;
+                contentBody.style.opacity = '1';
+                
+                // Execute any scripts in the loaded content
+                const scripts = contentBody.querySelectorAll('script');
+                scripts.forEach((script) => {
+                    const newScript = document.createElement('script');
+                    if (script.src) {
+                        newScript.src = script.src;
+                    } else {
+                        newScript.textContent = script.textContent;
+                    }
+                    document.head.appendChild(newScript);
+                    // Remove the script after execution to avoid duplicates
+                    setTimeout(() => {
+                        if (newScript.parentNode) {
+                            newScript.parentNode.removeChild(newScript);
+                        }
+                    }, 100);
+                });
+                
+                // Initialize the content if it has an initialization function
+                setTimeout(() => {
+                    const initFunctionName = `Minecraft${contentId.charAt(0).toUpperCase() + contentId.slice(1)}`;
+                    if (window[initFunctionName] && typeof window[initFunctionName].initialize === 'function') {
+                        console.log(`Initializing ${initFunctionName}`);
+                        window[initFunctionName].initialize(currentAuthSession);
+                    }
+                }, 200);
+            }, 100);
+        } else {
+            throw new Error(`Failed to load ${contentId}.html: ${response.status} ${response.statusText}`);
+        }
+        
+    } catch (error) {
+        console.error(`Failed to load ${contentId} content:`, error);
+        
+        // Show fallback content with Windows 11 styling
+        const titles = {
+            'play': 'Play',
+            'profiles': 'Profiles',
+            'mods': 'Mods', 
+            'settings': 'Settings'
+        };
+        
+        contentBody.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; gap: 16px; text-align: center;">
+                <div style="width: 64px; height: 64px; background: var(--win11-stroke-subtle); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--win11-text-tertiary);">
+                    🚧
+                </div>
+                <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: var(--win11-text-primary);">${titles[contentId] || contentId}</h3>
+                <p style="margin: 0; font-size: 14px; color: var(--win11-text-secondary); max-width: 300px;">Error loading content: ${error.message}</p>
+                <button class="win11-button accent" onclick="showContent('play')" style="margin-top: 8px;">
+                    Try Again
+                </button>
+            </div>
+        `;
+    }
+}
+
+// Color utility functions
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+}
+
+function getLuminance(r, g, b) {
+    const [rs, gs, bs] = [r, g, b].map(c => {
+        c = c / 255;
+        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+}
+
+function getContrastRatio(color1, color2) {
+    const lum1 = getLuminance(color1.r, color1.g, color1.b);
+    const lum2 = getLuminance(color2.r, color2.g, color2.b);
+    const brightest = Math.max(lum1, lum2);
+    const darkest = Math.min(lum1, lum2);
+    return (brightest + 0.05) / (darkest + 0.05);
+}
+
+function generateAccentColors(baseColor) {
+    const rgb = hexToRgb(baseColor);
+    if (!rgb) return null;
+    
+    // Generate lighter and darker variants with more subtle changes
+    const light = {
+        r: Math.min(255, Math.round(rgb.r + (255 - rgb.r) * 0.15)),
+        g: Math.min(255, Math.round(rgb.g + (255 - rgb.g) * 0.15)),
+        b: Math.min(255, Math.round(rgb.b + (255 - rgb.b) * 0.15))
+    };
+    
+    const dark = {
+        r: Math.round(rgb.r * 0.85),
+        g: Math.round(rgb.g * 0.85),
+        b: Math.round(rgb.b * 0.85)
+    };
+    
+    return {
+        base: baseColor, // Use the original hex color directly
+        light: `rgb(${light.r}, ${light.g}, ${light.b})`,
+        dark: `rgb(${dark.r}, ${dark.g}, ${dark.b})`
+    };
+}
+
+function getOptimalTextColor(backgroundColor) {
+    const bgColor = hexToRgb(backgroundColor);
+    if (!bgColor) return '#FFFFFF';
+    
+    const whiteContrast = getContrastRatio(bgColor, {r: 255, g: 255, b: 255});
+    const blackContrast = getContrastRatio(bgColor, {r: 0, g: 0, b: 0});
+    
+    return whiteContrast > blackContrast ? '#FFFFFF' : '#000000';
+}
+
+async function applyWindowsAccentColor() {
+    try {
+        const accentColor = await window.MosaicLauncher.invoke('get_windows_accent_color');
+        
+        const colors = generateAccentColors(accentColor);
+        if (!colors) return;
+        
+        const textColor = getOptimalTextColor(accentColor);
+        
+        // Apply colors to CSS variables
+        const root = document.documentElement;
+        root.style.setProperty('--win11-accent', colors.base);
+        root.style.setProperty('--win11-accent-light', colors.light);
+        root.style.setProperty('--win11-accent-dark', colors.dark);
+        root.style.setProperty('--win11-accent-text', textColor);
+        
+    } catch (error) {
+        console.warn('Failed to get Windows accent color:', error);
+        // Keep default colors
+    }
+}
+
+// Initialize when loaded
+console.log('Minecraft Main interface loaded');
+
+// Apply Windows accent color
+applyWindowsAccentColor();
+
+// Initialize the interface once the DOM is ready
+function initializeInterface() {
+    console.log('Initializing main interface...');
+    console.log('Document ready state:', document.readyState);
+    
+    // Small delay to ensure DOM is fully ready
+    setTimeout(() => {
+        console.log('Setting up navigation...');
+        setupNavigation();
+        
+        console.log('Loading default content...');
+        showContent('play');
+        
+        console.log('Main interface initialization complete');
+    }, 100);
+}
+
+// Run initialization when DOM is ready
+if (document.readyState === 'loading') {
+    console.log('DOM is loading, waiting for DOMContentLoaded...');
+    document.addEventListener('DOMContentLoaded', initializeInterface);
+} else {
+    console.log('DOM already loaded, initializing immediately...');
+    initializeInterface();
+}
+
+// Test function to manually trigger navigation
+window.testNavigation = function(contentId) {
+    console.log('Testing navigation to:', contentId);
+    showContent(contentId);
+};
+
+// Debug function to check if elements exist
+window.debugNavigation = function() {
+    console.log('=== Navigation Debug ===');
+    console.log('Navigation items:', document.querySelectorAll('.nav-item').length);
+    console.log('Content body:', document.getElementById('contentBody'));
+    console.log('Content title:', document.getElementById('contentTitle'));
+    console.log('Current content:', currentContent);
+    console.log('Current auth session:', currentAuthSession);
+    
+    // Test manual navigation
+    console.log('Testing manual navigation...');
+    const playButton = document.querySelector('[data-content="play"]');
+    if (playButton) {
+        console.log('Found play button, triggering click...');
+        playButton.click();
+    } else {
+        console.log('Play button not found!');
+    }
+};
+</script> 

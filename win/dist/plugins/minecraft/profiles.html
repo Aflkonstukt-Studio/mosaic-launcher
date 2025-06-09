@@ -1,0 +1,1183 @@
+<!-- Minecraft Profiles Screen - Windows 11 Style -->
+<div class="profiles-container">
+    <!-- Header Section -->
+    <div class="profiles-header">
+        <div class="header-content">
+            <div class="header-text">
+                <h1>Game Profiles</h1>
+                <p>Manage your Minecraft configurations and launch options</p>
+            </div>
+            <button class="add-profile-button" onclick="showCreateProfileDialog()">
+                <span class="button-icon">➕</span>
+                <span>Create Profile</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Profiles Grid -->
+    <div class="profiles-grid" id="profilesGrid">
+        <!-- Profiles will be populated here -->
+    </div>
+
+    <!-- Create/Edit Profile Modal -->
+    <div class="profile-modal" id="profileModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Create New Profile</h3>
+                <button class="close-button" onclick="hideProfileModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="profileForm" class="profile-form">
+                    <div class="form-group">
+                        <label class="form-label">Profile Name</label>
+                        <input type="text" id="profileName" class="form-input" placeholder="Enter profile name" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Minecraft Version</label>
+                            <select id="minecraftVersion" class="form-select" required>
+                                <option value="">Select version...</option>
+                                <option value="1.21.3">1.21.3 (Latest)</option>
+                                <option value="1.21.1">1.21.1</option>
+                                <option value="1.20.4">1.20.4</option>
+                                <option value="1.20.1">1.20.1</option>
+                                <option value="1.19.4">1.19.4</option>
+                                <option value="1.19.2">1.19.2</option>
+                                <option value="1.18.2">1.18.2</option>
+                                <option value="1.17.1">1.17.1</option>
+                                <option value="1.16.5">1.16.5</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Version Type</label>
+                            <select id="versionType" class="form-select">
+                                <option value="release">Release</option>
+                                <option value="snapshot">Snapshot</option>
+                                <option value="beta">Beta</option>
+                                <option value="alpha">Alpha</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Mod Loader</label>
+                        <select id="modLoader" class="form-select" onchange="loadModLoaderVersions(this.value)">
+                            <option value="">Vanilla (No mods)</option>
+                            <option value="forge">Forge</option>
+                            <option value="fabric">Fabric</option>
+                            <option value="quilt">Quilt</option>
+                            <option value="neoforge">NeoForge</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Mod Loader Version</label>
+                        <select id="modLoaderVersion" class="form-select" disabled>
+                            <option value="">Select mod loader first...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Memory Allocation (MB)</label>
+                            <div class="memory-input-group">
+                                <input type="range" id="memorySlider" class="memory-slider" min="1024" max="16384" value="4096" step="256" oninput="updateMemoryValue(this.value)">
+                                <input type="number" id="memoryValue" class="memory-input" min="1024" max="16384" value="4096" step="256" oninput="updateMemorySlider(this.value)">
+                                <span class="memory-unit">MB</span>
+                            </div>
+                            <div class="memory-info">
+                                <span class="memory-recommendation" id="memoryRecommendation">Recommended: 4096MB</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Game Directory</label>
+                        <div class="directory-input-group">
+                            <input type="text" id="gameDirectory" class="form-input" placeholder="Default location" readonly>
+                            <button type="button" class="browse-button" onclick="browseGameDirectory()">
+                                <span>📁</span>
+                                <span>Browse</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">JVM Arguments</label>
+                        <textarea id="jvmArgs" class="form-textarea" placeholder="Additional JVM arguments (optional)" rows="3"></textarea>
+                        <div class="form-help">
+                            <span>ℹ️</span>
+                            <span>Advanced users only. Leave empty for default settings.</span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="cancel-button" onclick="hideProfileModal()">Cancel</button>
+                <button type="submit" class="save-button" onclick="saveProfile()">
+                    <span id="saveButtonText">Create Profile</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="delete-modal" id="deleteModal" style="display: none;">
+        <div class="modal-content small">
+            <div class="modal-header">
+                <h3>Delete Profile</h3>
+            </div>
+            <div class="modal-body">
+                <div class="delete-warning">
+                    <div class="warning-icon">⚠️</div>
+                    <div class="warning-text">
+                        <p>Are you sure you want to delete "<span id="deleteProfileName">Profile Name</span>"?</p>
+                        <p class="warning-subtitle">This action cannot be undone.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="cancel-button" onclick="hideDeleteModal()">Cancel</button>
+                <button type="button" class="delete-button" onclick="confirmDeleteProfile()">
+                    <span>🗑️</span>
+                    <span>Delete</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.profiles-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    height: 100%;
+    overflow-y: auto;
+    padding: 0 24px 24px 24px;
+}
+
+/* Header Section */
+.profiles-header {
+    background: var(--win11-surface-elevated);
+    border: 1px solid var(--win11-stroke);
+    border-radius: var(--win11-radius-large);
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.profiles-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, var(--win11-accent) 0%, transparent 70%);
+    opacity: 0.03;
+    pointer-events: none;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.header-text h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--win11-text-primary);
+    line-height: 1.2;
+}
+
+.header-text p {
+    margin: 4px 0 0 0;
+    font-size: 14px;
+    color: var(--win11-text-secondary);
+    line-height: 1.4;
+}
+
+.add-profile-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: var(--win11-accent);
+    color: var(--win11-accent-text, white);
+    border: none;
+    border-radius: var(--win11-radius-medium);
+    cursor: pointer;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: var(--win11-shadow-elevation-low);
+}
+
+.add-profile-button:hover {
+    background: var(--win11-accent-light);
+    transform: translateY(-2px);
+    box-shadow: var(--win11-shadow-elevation-medium);
+}
+
+.button-icon {
+    font-size: 16px;
+}
+
+/* Profiles Grid */
+.profiles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 20px;
+}
+
+.profile-card {
+    background: var(--win11-surface-elevated);
+    border: 1px solid var(--win11-stroke);
+    border-radius: var(--win11-radius-large);
+    overflow: hidden;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.profile-card:hover {
+    border-color: var(--win11-accent);
+    box-shadow: var(--win11-shadow-elevation-low);
+    transform: translateY(-2px);
+}
+
+.profile-card.default {
+    border-color: var(--win11-accent);
+    box-shadow: 0 0 0 1px var(--win11-accent);
+}
+
+.profile-card.default::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, var(--win11-accent) 0%, transparent 50%);
+    opacity: 0.05;
+    pointer-events: none;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--win11-stroke-subtle);
+}
+
+.profile-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.profile-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--win11-text-primary);
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.profile-version {
+    font-size: 12px;
+    color: var(--win11-text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.profile-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    background: var(--win11-accent);
+    color: var(--win11-accent-text, white);
+    border-radius: var(--win11-radius-small);
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.profile-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.profile-action {
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: 1px solid var(--win11-stroke);
+    border-radius: var(--win11-radius-small);
+    color: var(--win11-text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all 0.15s ease;
+}
+
+.profile-action:hover {
+    background: var(--win11-surface-alt);
+    border-color: var(--win11-accent);
+    color: var(--win11-text-primary);
+}
+
+.profile-action.danger:hover {
+    background: #E74856;
+    border-color: #E74856;
+    color: white;
+}
+
+.profile-content {
+    padding: 20px;
+}
+
+.profile-details {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.detail-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.detail-icon {
+    width: 24px;
+    height: 24px;
+    background: var(--win11-surface);
+    border-radius: var(--win11-radius-small);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: var(--win11-text-secondary);
+    flex-shrink: 0;
+}
+
+.detail-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.detail-label {
+    font-size: 12px;
+    color: var(--win11-text-tertiary);
+    margin-bottom: 2px;
+}
+
+.detail-value {
+    font-size: 14px;
+    color: var(--win11-text-primary);
+    font-weight: 500;
+}
+
+.profile-launch {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--win11-stroke-subtle);
+}
+
+.launch-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    background: var(--win11-accent);
+    color: var(--win11-accent-text, white);
+    border: none;
+    border-radius: var(--win11-radius-medium);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.launch-button:hover {
+    background: var(--win11-accent-light);
+    transform: translateY(-1px);
+}
+
+.launch-button:active {
+    transform: translateY(0);
+}
+
+/* Modal Styles */
+.profile-modal, .delete-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+}
+
+.modal-content {
+    background: var(--win11-surface-elevated);
+    border: 1px solid var(--win11-stroke);
+    border-radius: var(--win11-radius-large);
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: var(--win11-shadow-elevation-high);
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-content.small {
+    max-width: 400px;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--win11-stroke);
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--win11-text-primary);
+}
+
+.close-button {
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    border-radius: var(--win11-radius-small);
+    color: var(--win11-text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.15s ease;
+}
+
+.close-button:hover {
+    background: var(--win11-surface-alt);
+    color: var(--win11-text-primary);
+}
+
+.modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding: 20px 24px;
+    border-top: 1px solid var(--win11-stroke);
+}
+
+/* Form Styles */
+.profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--win11-text-primary);
+}
+
+.form-input, .form-select, .form-textarea {
+    padding: 10px 12px;
+    background: var(--win11-surface);
+    border: 1px solid var(--win11-stroke);
+    border-radius: var(--win11-radius-small);
+    font-size: 14px;
+    color: var(--win11-text-primary);
+    transition: all 0.15s ease;
+    font-family: inherit;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+    outline: none;
+    border-color: var(--win11-accent);
+    box-shadow: 0 0 0 1px var(--win11-accent);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.memory-input-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.memory-slider {
+    flex: 1;
+    height: 6px;
+    background: var(--win11-stroke);
+    border-radius: 3px;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.memory-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: var(--win11-accent);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.memory-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: var(--win11-accent);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+}
+
+.memory-input {
+    width: 80px;
+    text-align: center;
+}
+
+.memory-unit {
+    font-size: 12px;
+    color: var(--win11-text-secondary);
+    font-weight: 500;
+}
+
+.memory-info {
+    margin-top: 4px;
+}
+
+.memory-recommendation {
+    font-size: 12px;
+    color: var(--win11-text-tertiary);
+}
+
+.directory-input-group {
+    display: flex;
+    gap: 8px;
+}
+
+.directory-input-group .form-input {
+    flex: 1;
+    background: var(--win11-surface-alt);
+    color: var(--win11-text-secondary);
+}
+
+.browse-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: var(--win11-surface);
+    border: 1px solid var(--win11-stroke);
+    border-radius: var(--win11-radius-small);
+    color: var(--win11-text-primary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+    font-size: 14px;
+}
+
+.browse-button:hover {
+    background: var(--win11-surface-alt);
+    border-color: var(--win11-accent);
+}
+
+.form-help {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--win11-text-tertiary);
+    margin-top: 4px;
+}
+
+/* Modal Buttons */
+.cancel-button, .save-button, .delete-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--win11-radius-medium);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.cancel-button {
+    background: var(--win11-surface);
+    color: var(--win11-text-primary);
+    border: 1px solid var(--win11-stroke);
+}
+
+.cancel-button:hover {
+    background: var(--win11-surface-alt);
+    border-color: var(--win11-accent);
+}
+
+.save-button {
+    background: var(--win11-accent);
+    color: var(--win11-accent-text, white);
+}
+
+.save-button:hover {
+    background: var(--win11-accent-light);
+}
+
+.delete-button {
+    background: #E74856;
+    color: white;
+}
+
+.delete-button:hover {
+    background: #C63142;
+}
+
+/* Delete Modal */
+.delete-warning {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.warning-icon {
+    font-size: 32px;
+    color: #E74856;
+    flex-shrink: 0;
+}
+
+.warning-text p {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: var(--win11-text-primary);
+}
+
+.warning-subtitle {
+    font-size: 12px !important;
+    color: var(--win11-text-secondary) !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .profiles-container {
+        padding: 0 16px 16px 16px;
+        gap: 16px;
+    }
+    
+    .profiles-header {
+        padding: 20px;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .profiles-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-content {
+        width: 95%;
+    }
+    
+    .memory-input-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .memory-input {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-actions {
+        flex-direction: column;
+    }
+    
+    .modal-footer {
+        flex-direction: column;
+    }
+    
+    .cancel-button, .save-button, .delete-button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+<script>
+// Minecraft Profiles Screen Functions
+let currentProfiles = [];
+let editingProfile = null;
+
+// Initialize profiles screen
+window.MinecraftProfiles = {
+    initialize: function(authSession) {
+        console.log('Initializing Minecraft profiles screen');
+        loadProfiles();
+    }
+};
+
+function loadProfiles() {
+    // Mock profiles data - in real implementation this would come from Tauri backend
+    currentProfiles = [
+        {
+            id: 'default',
+            name: 'Latest Release',
+            version: '1.21.3',
+            versionType: 'release',
+            modLoader: null,
+            modLoaderVersion: null,
+            memory: 4096,
+            gameDirectory: '',
+            jvmArgs: '',
+            isDefault: true,
+            lastUsed: new Date().toISOString()
+        },
+        {
+            id: 'modded-forge',
+            name: 'Modded Experience',
+            version: '1.20.1',
+            versionType: 'release',
+            modLoader: 'forge',
+            modLoaderVersion: '47.2.0',
+            memory: 6144,
+            gameDirectory: '',
+            jvmArgs: '-XX:+UseG1GC -XX:+UnlockExperimentalVMOptions',
+            isDefault: false,
+            lastUsed: new Date(Date.now() - 86400000).toISOString()
+        },
+        {
+            id: 'fabric-performance',
+            name: 'Performance Pack',
+            version: '1.21.3',
+            versionType: 'release',
+            modLoader: 'fabric',
+            modLoaderVersion: '0.16.9',
+            memory: 3072,
+            gameDirectory: '',
+            jvmArgs: '-XX:+UseG1GC',
+            isDefault: false,
+            lastUsed: new Date(Date.now() - 172800000).toISOString()
+        }
+    ];
+
+    renderProfiles();
+}
+
+function renderProfiles() {
+    const container = document.getElementById('profilesGrid');
+    container.innerHTML = '';
+    
+    currentProfiles.forEach(profile => {
+        const profileCard = document.createElement('div');
+        profileCard.className = `profile-card ${profile.isDefault ? 'default' : ''}`;
+        
+        const modLoaderInfo = profile.modLoader ? 
+            `${profile.modLoader.charAt(0).toUpperCase() + profile.modLoader.slice(1)} ${profile.modLoaderVersion}` : 
+            'Vanilla';
+            
+        const memoryGB = (profile.memory / 1024).toFixed(1);
+        
+        profileCard.innerHTML = `
+            <div class="profile-header">
+                <div class="profile-info">
+                    <div class="profile-name">${profile.name}</div>
+                    <div class="profile-version">
+                        Minecraft ${profile.version}
+                        ${profile.isDefault ? '<span class="profile-badge">⭐ Default</span>' : ''}
+                    </div>
+                </div>
+                <div class="profile-actions">
+                    <button class="profile-action" onclick="editProfile('${profile.id}')" title="Edit Profile">
+                        ✏️
+                    </button>
+                    <button class="profile-action" onclick="duplicateProfile('${profile.id}')" title="Duplicate Profile">
+                        📋
+                    </button>
+                    ${!profile.isDefault ? `
+                        <button class="profile-action danger" onclick="showDeleteProfile('${profile.id}')" title="Delete Profile">
+                            🗑️
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+            <div class="profile-content">
+                <div class="profile-details">
+                    <div class="detail-row">
+                        <div class="detail-icon">🎮</div>
+                        <div class="detail-content">
+                            <div class="detail-label">Mod Loader</div>
+                            <div class="detail-value">${modLoaderInfo}</div>
+                        </div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-icon">💾</div>
+                        <div class="detail-content">
+                            <div class="detail-label">Memory</div>
+                            <div class="detail-value">${memoryGB}GB (${profile.memory}MB)</div>
+                        </div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-icon">📁</div>
+                        <div class="detail-content">
+                            <div class="detail-label">Directory</div>
+                            <div class="detail-value">${profile.gameDirectory || 'Default location'}</div>
+                        </div>
+                    </div>
+                    ${profile.jvmArgs ? `
+                        <div class="detail-row">
+                            <div class="detail-icon">⚙️</div>
+                            <div class="detail-content">
+                                <div class="detail-label">JVM Args</div>
+                                <div class="detail-value">${profile.jvmArgs}</div>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="profile-launch">
+                    <button class="launch-button" onclick="launchProfile('${profile.id}')">
+                        <span>▶️</span>
+                        <span>Launch</span>
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(profileCard);
+    });
+}
+
+// Modal functions
+function showCreateProfileDialog() {
+    editingProfile = null;
+    document.getElementById('modalTitle').textContent = 'Create New Profile';
+    document.getElementById('saveButtonText').textContent = 'Create Profile';
+    resetForm();
+    showProfileModal();
+}
+
+function editProfile(profileId) {
+    const profile = currentProfiles.find(p => p.id === profileId);
+    if (!profile) return;
+    
+    editingProfile = profile;
+    document.getElementById('modalTitle').textContent = 'Edit Profile';
+    document.getElementById('saveButtonText').textContent = 'Save Changes';
+    populateForm(profile);
+    showProfileModal();
+}
+
+function duplicateProfile(profileId) {
+    const profile = currentProfiles.find(p => p.id === profileId);
+    if (!profile) return;
+    
+    editingProfile = null;
+    document.getElementById('modalTitle').textContent = 'Duplicate Profile';
+    document.getElementById('saveButtonText').textContent = 'Create Profile';
+    populateForm({
+        ...profile,
+        name: profile.name + ' (Copy)',
+        isDefault: false
+    });
+    showProfileModal();
+}
+
+function showDeleteProfile(profileId) {
+    const profile = currentProfiles.find(p => p.id === profileId);
+    if (!profile) return;
+    
+    document.getElementById('deleteProfileName').textContent = profile.name;
+    document.getElementById('deleteModal').style.display = 'flex';
+    editingProfile = profile;
+}
+
+function showProfileModal() {
+    document.getElementById('profileModal').style.display = 'flex';
+}
+
+function hideProfileModal() {
+    document.getElementById('profileModal').style.display = 'none';
+    editingProfile = null;
+}
+
+function hideDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+    editingProfile = null;
+}
+
+function resetForm() {
+    document.getElementById('profileForm').reset();
+    document.getElementById('memorySlider').value = 4096;
+    document.getElementById('memoryValue').value = 4096;
+    document.getElementById('modLoaderVersion').disabled = true;
+    document.getElementById('modLoaderVersion').innerHTML = '<option value="">Select mod loader first...</option>';
+    updateMemoryRecommendation(4096);
+}
+
+function populateForm(profile) {
+    document.getElementById('profileName').value = profile.name;
+    document.getElementById('minecraftVersion').value = profile.version;
+    document.getElementById('versionType').value = profile.versionType;
+    document.getElementById('modLoader').value = profile.modLoader || '';
+    document.getElementById('memorySlider').value = profile.memory;
+    document.getElementById('memoryValue').value = profile.memory;
+    document.getElementById('gameDirectory').value = profile.gameDirectory;
+    document.getElementById('jvmArgs').value = profile.jvmArgs;
+    
+    if (profile.modLoader) {
+        loadModLoaderVersions(profile.modLoader);
+        setTimeout(() => {
+            document.getElementById('modLoaderVersion').value = profile.modLoaderVersion || '';
+        }, 100);
+    }
+    
+    updateMemoryRecommendation(profile.memory);
+}
+
+// Memory slider functions
+function updateMemoryValue(value) {
+    document.getElementById('memoryValue').value = value;
+    updateMemoryRecommendation(value);
+}
+
+function updateMemorySlider(value) {
+    document.getElementById('memorySlider').value = value;
+    updateMemoryRecommendation(value);
+}
+
+function updateMemoryRecommendation(memory) {
+    const recommendation = document.getElementById('memoryRecommendation');
+    const memoryInt = parseInt(memory);
+    
+    if (memoryInt < 2048) {
+        recommendation.textContent = 'Warning: Low memory may cause poor performance';
+        recommendation.style.color = '#E74856';
+    } else if (memoryInt > 8192) {
+        recommendation.textContent = 'Note: High memory allocation may not improve performance';
+        recommendation.style.color = '#FF8C00';
+    } else {
+        recommendation.textContent = `Recommended: ${memoryInt}MB`;
+        recommendation.style.color = 'var(--win11-text-tertiary)';
+    }
+}
+
+// Mod loader functions
+function loadModLoaderVersions(modLoader) {
+    const versions = {
+        forge: ['50.1.13', '50.1.12', '49.0.31', '49.0.30', '47.2.0', '47.1.0'],
+        fabric: ['0.16.9', '0.16.8', '0.16.7', '0.16.6', '0.15.11', '0.14.24'],
+        quilt: ['0.27.1', '0.27.0', '0.26.4', '0.26.3', '0.25.1', '0.21.2'],
+        neoforge: ['21.1.85', '21.1.84', '21.1.83', '20.4.190', '20.4.189']
+    };
+
+    const select = document.getElementById('modLoaderVersion');
+    select.innerHTML = '<option value="">Select version...</option>';
+    select.disabled = false;
+    
+    if (versions[modLoader]) {
+        versions[modLoader].forEach(version => {
+            const option = document.createElement('option');
+            option.value = version;
+            option.textContent = version;
+            select.appendChild(option);
+        });
+    }
+}
+
+// File browser function
+async function browseGameDirectory() {
+    try {
+        const tauriApi = window.MosaicLauncher.tauriApi();
+        if (!tauriApi) {
+            throw new Error('Tauri API not available');
+        }
+
+        const result = await tauriApi.invoke('browse_directory', {
+            title: 'Select Game Directory'
+        });
+        
+        if (result) {
+            document.getElementById('gameDirectory').value = result;
+        }
+    } catch (error) {
+        console.error('Failed to browse directory:', error);
+        if (window.MosaicLauncher) {
+            window.MosaicLauncher.showToast(`Failed to browse directory: ${error.message}`);
+        }
+    }
+}
+
+// Save profile function
+function saveProfile() {
+    const formData = {
+        name: document.getElementById('profileName').value.trim(),
+        version: document.getElementById('minecraftVersion').value,
+        versionType: document.getElementById('versionType').value,
+        modLoader: document.getElementById('modLoader').value || null,
+        modLoaderVersion: document.getElementById('modLoaderVersion').value || null,
+        memory: parseInt(document.getElementById('memoryValue').value),
+        gameDirectory: document.getElementById('gameDirectory').value.trim(),
+        jvmArgs: document.getElementById('jvmArgs').value.trim()
+    };
+
+    // Validation
+    if (!formData.name) {
+        alert('Please enter a profile name');
+        return;
+    }
+
+    if (!formData.version) {
+        alert('Please select a Minecraft version');
+        return;
+    }
+
+    if (formData.modLoader && !formData.modLoaderVersion) {
+        alert('Please select a mod loader version');
+        return;
+    }
+
+    // Check for duplicate names (except when editing)
+    const existingProfile = currentProfiles.find(p => 
+        p.name.toLowerCase() === formData.name.toLowerCase() && 
+        (!editingProfile || p.id !== editingProfile.id)
+    );
+    
+    if (existingProfile) {
+        alert('A profile with this name already exists');
+        return;
+    }
+
+    if (editingProfile) {
+        // Update existing profile
+        const index = currentProfiles.findIndex(p => p.id === editingProfile.id);
+        currentProfiles[index] = {
+            ...currentProfiles[index],
+            ...formData,
+            lastUsed: new Date().toISOString()
+        };
+        
+        if (window.MosaicLauncher) {
+            window.MosaicLauncher.showToast(`Profile "${formData.name}" updated successfully`);
+        }
+    } else {
+        // Create new profile
+        const newProfile = {
+            ...formData,
+            id: `profile_${Date.now()}`,
+            isDefault: false,
+            lastUsed: new Date().toISOString()
+        };
+        
+        currentProfiles.push(newProfile);
+        
+        if (window.MosaicLauncher) {
+            window.MosaicLauncher.showToast(`Profile "${formData.name}" created successfully`);
+        }
+    }
+
+    renderProfiles();
+    hideProfileModal();
+}
+
+// Delete profile function
+function confirmDeleteProfile() {
+    if (!editingProfile) return;
+    
+    const index = currentProfiles.findIndex(p => p.id === editingProfile.id);
+    if (index > -1) {
+        const profileName = editingProfile.name;
+        currentProfiles.splice(index, 1);
+        renderProfiles();
+        
+        if (window.MosaicLauncher) {
+            window.MosaicLauncher.showToast(`Profile "${profileName}" deleted`);
+        }
+    }
+    
+    hideDeleteModal();
+}
+
+// Launch profile function
+function launchProfile(profileId) {
+    const profile = currentProfiles.find(p => p.id === profileId);
+    if (!profile) return;
+    
+    console.log('Launching profile:', profile);
+    
+    if (window.MosaicLauncher) {
+        window.MosaicLauncher.showToast(`Launching ${profile.name}...`);
+    }
+    
+    // Update last used
+    profile.lastUsed = new Date().toISOString();
+    renderProfiles();
+}
+
+// Initialize when loaded
+console.log('Minecraft Profiles screen loaded');
+</script> 
+</script> 

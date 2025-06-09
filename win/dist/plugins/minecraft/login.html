@@ -1,0 +1,691 @@
+<!-- Minecraft Login Screen Plugin - Windows 11 Native Style -->
+<div class="minecraft-app">
+    <!-- Title Bar -->
+    <div class="title-bar">
+        <div class="title-bar-left">
+            <button class="title-bar-button back-button" onclick="goBackToGameSelection()" title="Back to Games">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M7.707 3.293a1 1 0 0 0-1.414 0L2.586 7h11.414a1 1 0 1 1 0 2H2.586l3.707 3.707a1 1 0 0 1-1.414 1.414l-5-5a1 1 0 0 1 0-1.414l5-5a1 1 0 0 1 1.414 0z"/>
+                </svg>
+            </button>
+            <div class="title-info">
+                <div class="app-icon">⛏️</div>
+                <div class="title-text">
+                    <h1>Minecraft</h1>
+                    <span class="subtitle">Java Edition</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Content -->
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-icon">⛏️</div>
+                <h2 class="login-title">Welcome to Minecraft</h2>
+                <p class="login-subtitle">
+                    Sign in with your Microsoft account to access your worlds, skins, and marketplace content. 
+                    Or continue offline to play without online features.
+                </p>
+            </div>
+            
+            <div class="login-actions">
+                <button class="win11-button accent large" onclick="microsoftLogin()" id="microsoftLoginBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zM24 11.4H12.6V0H24v11.4z"/>
+                    </svg>
+                    <span>Sign in with Microsoft</span>
+                </button>
+                
+                <div class="divider">
+                    <span>or</span>
+                </div>
+                
+                <button class="win11-button secondary large" onclick="offlineLogin()" id="offlineLoginBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                    </svg>
+                    <span>Play Offline</span>
+                </button>
+            </div>
+            
+            <div class="login-footer">
+                <p class="disclaimer">
+                    By signing in, you agree to the <a href="#" class="link">Minecraft EULA</a> 
+                    and <a href="#" class="link">Microsoft Privacy Policy</a>.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Windows 11 Native Style CSS */
+:root {
+    /* Windows 11 Fluent Design Colors */
+    --win11-surface: #F3F3F3;
+    --win11-surface-alt: #FAFAFA;
+    --win11-surface-elevated: #FFFFFF;
+    --win11-background: #F5F5F5;
+    --win11-stroke: #E1E1E1;
+    --win11-stroke-subtle: #F0F0F0;
+    --win11-text-primary: #1C1C1C;
+    --win11-text-secondary: #616161;
+    --win11-text-tertiary: #8A8A8A;
+    --win11-accent: #0078D4;
+    --win11-accent-light: #106EBE;
+    --win11-accent-dark: #005A9E;
+    --win11-shadow-elevation-low: 0 1px 3px rgba(0,0,0,0.12);
+    --win11-shadow-elevation-medium: 0 3px 8px rgba(0,0,0,0.15);
+    --win11-shadow-elevation-high: 0 8px 24px rgba(0,0,0,0.20);
+    --win11-radius-small: 4px;
+    --win11-radius-medium: 8px;
+    --win11-radius-large: 12px;
+}
+
+/* Dark theme overrides */
+[data-theme="dark"] {
+    --win11-surface: #2C2C2C;
+    --win11-surface-alt: #282828;
+    --win11-surface-elevated: #323232;
+    --win11-background: #202020;
+    --win11-stroke: #414141;
+    --win11-stroke-subtle: #373737;
+    --win11-text-primary: #FFFFFF;
+    --win11-text-secondary: #C7C7C7;
+    --win11-text-tertiary: #8A8A8A;
+    --win11-accent: #60CDFF;
+    --win11-accent-light: #4FC3F7;
+    --win11-accent-dark: #0078D4;
+}
+
+.minecraft-app {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--win11-background);
+    color: var(--win11-text-primary);
+    font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* Title Bar */
+.title-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 48px;
+    padding: 0 16px;
+    background: var(--win11-surface-elevated);
+    border-bottom: 1px solid var(--win11-stroke);
+    position: relative;
+    z-index: 100;
+}
+
+.title-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.title-bar-button {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: var(--win11-radius-small);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--win11-text-secondary);
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.title-bar-button:hover {
+    background: var(--win11-stroke-subtle);
+    color: var(--win11-text-primary);
+}
+
+.title-bar-button:active {
+    background: var(--win11-stroke);
+    transform: scale(0.96);
+}
+
+.title-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.app-icon {
+    font-size: 20px;
+}
+
+.title-text h1 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--win11-text-primary);
+    line-height: 1.2;
+}
+
+.title-text .subtitle {
+    font-size: 12px;
+    color: var(--win11-text-secondary);
+    font-weight: 400;
+}
+
+/* Login Container */
+.login-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    background: linear-gradient(135deg, var(--win11-background) 0%, var(--win11-surface) 100%);
+}
+
+.login-card {
+    width: 100%;
+    max-width: 400px;
+    background: var(--win11-surface-elevated);
+    border: 1px solid var(--win11-stroke);
+    border-radius: var(--win11-radius-large);
+    padding: 32px;
+    box-shadow: var(--win11-shadow-elevation-medium);
+    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(24px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.login-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 24px auto;
+    background: linear-gradient(135deg, var(--win11-accent) 0%, var(--win11-accent-light) 100%);
+    border-radius: var(--win11-radius-medium);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: white;
+    box-shadow: var(--win11-shadow-elevation-low);
+}
+
+.login-title {
+    margin: 0 0 12px 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--win11-text-primary);
+    line-height: 1.3;
+}
+
+.login-subtitle {
+    margin: 0;
+    font-size: 14px;
+    color: var(--win11-text-secondary);
+    line-height: 1.5;
+}
+
+.login-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 8px 0;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--win11-stroke);
+}
+
+.divider span {
+    font-size: 12px;
+    color: var(--win11-text-tertiary);
+    font-weight: 500;
+}
+
+/* Windows 11 Buttons */
+.win11-button {
+    padding: 12px 16px;
+    border: 1px solid var(--win11-stroke);
+    background: var(--win11-surface);
+    color: var(--win11-text-primary);
+    border-radius: var(--win11-radius-small);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.win11-button.large {
+    padding: 16px 20px;
+    font-size: 15px;
+}
+
+.win11-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.1);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.win11-button:hover {
+    border-color: var(--win11-accent);
+    transform: translateY(-1px);
+    box-shadow: var(--win11-shadow-elevation-low);
+}
+
+.win11-button:hover::before {
+    opacity: 1;
+}
+
+.win11-button:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.win11-button.accent {
+    background: var(--win11-accent);
+    border-color: var(--win11-accent);
+    color: var(--win11-accent-text, white);
+}
+
+.win11-button.accent:hover {
+    background: var(--win11-accent-light);
+    border-color: var(--win11-accent-light);
+}
+
+.win11-button.secondary {
+    background: var(--win11-surface-alt);
+    border-color: var(--win11-stroke);
+}
+
+.win11-button.secondary:hover {
+    background: var(--win11-surface);
+}
+
+.win11-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.win11-button:disabled:hover {
+    border-color: var(--win11-stroke);
+}
+
+.login-footer {
+    text-align: center;
+    padding-top: 16px;
+    border-top: 1px solid var(--win11-stroke-subtle);
+}
+
+.disclaimer {
+    margin: 0;
+    font-size: 12px;
+    color: var(--win11-text-tertiary);
+    line-height: 1.4;
+}
+
+.link {
+    color: var(--win11-accent);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+/* Focus styles */
+.title-bar-button:focus-visible,
+.win11-button:focus-visible,
+.link:focus-visible {
+    outline: 2px solid var(--win11-accent);
+    outline-offset: 2px;
+}
+
+/* Loading states */
+.win11-button.loading {
+    pointer-events: none;
+}
+
+.win11-button.loading svg {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .login-container {
+        padding: 24px 16px;
+    }
+    
+    .login-card {
+        padding: 24px;
+    }
+}
+</style>
+
+<script>
+// Minecraft Login Plugin Functions - Windows 11 Style
+let authSession = null;
+
+function goBackToGameSelection() {
+    if (window.MosaicLauncher) {
+        window.MosaicLauncher.goBackToGameSelection();
+    }
+}
+
+async function microsoftLogin() {
+    const button = document.getElementById('microsoftLoginBtn');
+    const originalContent = button.innerHTML;
+    
+    try {
+        console.log('Starting Microsoft login...');
+        
+        // Show loading state
+        button.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 1v6m0 10v6m11-7h-6m-10 0H1"/>
+            </svg>
+            <span>Signing in...</span>
+        `;
+        button.disabled = true;
+        button.classList.add('loading');
+
+        // Call the Tauri backend using MosaicLauncher API
+        const result = await window.MosaicLauncher.invoke('microsoft_login');
+        console.log('Microsoft login result:', result);
+
+        // Store auth session
+        authSession = result;
+
+        // Success - transition to main interface
+        await loadMainInterface();
+        
+    } catch (error) {
+        console.error('Login failed:', error);
+        
+        // Reset button
+        button.innerHTML = originalContent;
+        button.disabled = false;
+        button.classList.remove('loading');
+        
+        // Show error
+        if (window.MosaicLauncher) {
+            window.MosaicLauncher.showToast(`Login failed: ${error.message || error}`);
+        } else {
+            alert(`Login failed: ${error.message || error}`);
+        }
+    }
+}
+
+async function offlineLogin() {
+    const button = document.getElementById('offlineLoginBtn');
+    const originalContent = button.innerHTML;
+    
+    try {
+        console.log('Starting offline login...');
+        
+        // Show prompt for username with modern styling
+        const username = prompt('Enter a username for offline mode:', 'Player');
+        if (!username || username.trim() === '') {
+            console.log('No username provided, aborting');
+            return;
+        }
+
+        // Show loading state
+        button.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 1v6m0 10v6m11-7h-6m-10 0H1"/>
+            </svg>
+            <span>Creating session...</span>
+        `;
+        button.disabled = true;
+        button.classList.add('loading');
+
+        // Call the Tauri backend using MosaicLauncher API
+        const result = await window.MosaicLauncher.invoke('offline_login', { username: username.trim() });
+        console.log('Offline login result:', result);
+
+        // Store auth session
+        authSession = result;
+
+        // Success - transition to main interface
+        await loadMainInterface();
+        
+    } catch (error) {
+        console.error('Offline login failed:', error);
+        
+        // Reset button
+        button.innerHTML = originalContent;
+        button.disabled = false;
+        button.classList.remove('loading');
+        
+        // Show error
+        if (window.MosaicLauncher) {
+            window.MosaicLauncher.showToast(`Offline login failed: ${error.message || error}`);
+        } else {
+            alert(`Offline login failed: ${error.message || error}`);
+        }
+    }
+}
+
+async function loadMainInterface() {
+    try {
+        console.log('Loading main interface...');
+        
+        // Add fade out animation
+        const app = document.querySelector('.minecraft-app');
+        app.style.opacity = '0';
+        app.style.transform = 'scale(0.95)';
+        
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        // Load the main interface HTML
+        const response = await fetch('./plugins/minecraft/main.html');
+        if (!response.ok) {
+            throw new Error(`Failed to fetch main.html: ${response.status} ${response.statusText}`);
+        }
+        
+        const html = await response.text();
+        
+        // Replace current content
+        const container = document.querySelector('.minecraft-app').parentNode;
+        if (!container) {
+            throw new Error('Could not find minecraft container');
+        }
+        
+        // Create a temporary container to parse the HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        
+        // Extract and execute any script tags
+        const scripts = tempDiv.querySelectorAll('script');
+        console.log('Found scripts in main.html:', scripts.length);
+        
+        // Set the HTML content first
+        container.innerHTML = html;
+        
+        // Then execute the scripts to set up MinecraftMain
+        scripts.forEach((script, index) => {
+            console.log(`Executing script ${index + 1}/${scripts.length}`);
+            const newScript = document.createElement('script');
+            if (script.src) {
+                newScript.src = script.src;
+                console.log('Loading external script:', script.src);
+            } else {
+                newScript.textContent = script.textContent;
+                console.log('Executing inline script, length:', script.textContent.length);
+            }
+            document.head.appendChild(newScript);
+        });
+        
+        // Wait for scripts to execute and then initialize
+        setTimeout(() => {
+            console.log('Checking for MinecraftMain after script execution...');
+            if (window.MinecraftMain) {
+                console.log('MinecraftMain found, initializing with auth session...');
+                window.MinecraftMain.initialize(authSession);
+            } else {
+                console.error('MinecraftMain not found after loading scripts');
+                // Try again after a longer delay
+                setTimeout(() => {
+                    if (window.MinecraftMain) {
+                        console.log('MinecraftMain found on retry, initializing...');
+                        window.MinecraftMain.initialize(authSession);
+                    } else {
+                        console.error('MinecraftMain still not found, something is wrong');
+                    }
+                }, 500);
+            }
+        }, 200);
+        
+        console.log('Main interface loaded successfully');
+        
+    } catch (error) {
+        console.error('Failed to load main interface:', error);
+        if (window.MosaicLauncher) {
+            window.MosaicLauncher.showToast(`Failed to load main interface: ${error.message}`);
+        }
+    }
+}
+
+// Color utility functions
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+}
+
+function getLuminance(r, g, b) {
+    const [rs, gs, bs] = [r, g, b].map(c => {
+        c = c / 255;
+        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+}
+
+function getContrastRatio(color1, color2) {
+    const lum1 = getLuminance(color1.r, color1.g, color1.b);
+    const lum2 = getLuminance(color2.r, color2.g, color2.b);
+    const brightest = Math.max(lum1, lum2);
+    const darkest = Math.min(lum1, lum2);
+    return (brightest + 0.05) / (darkest + 0.05);
+}
+
+function generateAccentColors(baseColor) {
+    const rgb = hexToRgb(baseColor);
+    if (!rgb) return null;
+    
+    // Generate lighter and darker variants with more subtle changes
+    const light = {
+        r: Math.min(255, Math.round(rgb.r + (255 - rgb.r) * 0.15)),
+        g: Math.min(255, Math.round(rgb.g + (255 - rgb.g) * 0.15)),
+        b: Math.min(255, Math.round(rgb.b + (255 - rgb.b) * 0.15))
+    };
+    
+    const dark = {
+        r: Math.round(rgb.r * 0.85),
+        g: Math.round(rgb.g * 0.85),
+        b: Math.round(rgb.b * 0.85)
+    };
+    
+    return {
+        base: baseColor, // Use the original hex color directly
+        light: `rgb(${light.r}, ${light.g}, ${light.b})`,
+        dark: `rgb(${dark.r}, ${dark.g}, ${dark.b})`
+    };
+}
+
+function getOptimalTextColor(backgroundColor) {
+    const bgColor = hexToRgb(backgroundColor);
+    if (!bgColor) return '#FFFFFF';
+    
+    const whiteContrast = getContrastRatio(bgColor, {r: 255, g: 255, b: 255});
+    const blackContrast = getContrastRatio(bgColor, {r: 0, g: 0, b: 0});
+    
+    return whiteContrast > blackContrast ? '#FFFFFF' : '#000000';
+}
+
+async function applyWindowsAccentColor() {
+    try {
+        console.log('Getting Windows accent color...');
+        const accentColor = await window.MosaicLauncher.invoke('get_windows_accent_color');
+        console.log('Got accent color:', accentColor);
+        
+        const colors = generateAccentColors(accentColor);
+        if (!colors) return;
+        
+        const textColor = getOptimalTextColor(accentColor);
+        
+        // Apply colors to CSS variables
+        const root = document.documentElement;
+        root.style.setProperty('--win11-accent', colors.base);
+        root.style.setProperty('--win11-accent-light', colors.light);
+        root.style.setProperty('--win11-accent-dark', colors.dark);
+        root.style.setProperty('--win11-accent-text', textColor);
+        
+        console.log('Applied Windows accent color:', colors);
+        
+    } catch (error) {
+        console.warn('Failed to get Windows accent color:', error);
+        // Keep default colors
+    }
+}
+
+// Initialize plugin when loaded
+console.log('Minecraft Login plugin loaded');
+
+// Apply Windows accent color
+applyWindowsAccentColor();
+</script> 

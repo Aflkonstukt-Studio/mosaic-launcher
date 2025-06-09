@@ -1,0 +1,1025 @@
+<!-- Minecraft Play Screen - Windows 11 Style -->
+<div class="play-container">
+    <!-- Quick Launch Hero Section -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>Ready to play?</h1>
+                <p>Choose your adventure and launch into the world of Minecraft</p>
+            </div>
+            <div class="hero-actions">
+                <button class="launch-button primary" onclick="quickLaunch()">
+                    <div class="button-icon">▶️</div>
+                    <div class="button-content">
+                        <div class="button-title">Play Latest</div>
+                        <div class="button-subtitle">Minecraft 1.21.3</div>
+                    </div>
+                </button>
+                <button class="launch-button secondary" onclick="showVersionSelector()">
+                    <div class="button-icon">📋</div>
+                    <div class="button-content">
+                        <div class="button-title">Choose Version</div>
+                        <div class="button-subtitle">Select specific version</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="minecraft-logo">⛏️</div>
+        </div>
+    </div>
+
+    <!-- Content Grid -->
+    <div class="content-grid">
+        <!-- Recent Worlds Card -->
+        <div class="content-card worlds-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <div class="card-icon">🌍</div>
+                    <h3>Recent Worlds</h3>
+                </div>
+                <button class="card-action" onclick="refreshWorlds()">
+                    <span class="action-icon">🔄</span>
+                    <span>Refresh</span>
+                </button>
+            </div>
+            <div class="card-content">
+                <div class="worlds-list" id="worldsList">
+                    <!-- Worlds will be populated here -->
+                </div>
+                <button class="add-world-button" onclick="createNewWorld()">
+                    <span class="add-icon">➕</span>
+                    <span>Create New World</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Active Profile Card -->
+        <div class="content-card profile-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <div class="card-icon">👤</div>
+                    <h3>Active Profile</h3>
+                </div>
+                <button class="card-action" onclick="openProfiles()">
+                    <span class="action-icon">⚙️</span>
+                    <span>Manage</span>
+                </button>
+            </div>
+            <div class="card-content">
+                <div class="active-profile" id="activeProfile">
+                    <div class="profile-info">
+                        <div class="profile-name">Latest Release</div>
+                        <div class="profile-details">
+                            <span class="profile-version">Minecraft 1.21.3</span>
+                            <span class="profile-type">Vanilla</span>
+                        </div>
+                        <div class="profile-stats">
+                            <span class="stat">
+                                <span class="stat-icon">💾</span>
+                                <span>4GB RAM</span>
+                            </span>
+                            <span class="stat">
+                                <span class="stat-icon">☀️</span>
+                                <span>Java 17</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- News & Updates Card -->
+        <div class="content-card news-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <div class="card-icon">📰</div>
+                    <h3>News & Updates</h3>
+                </div>
+                <button class="card-action" onclick="openNewsCenter()">
+                    <span class="action-icon">📖</span>
+                    <span>View All</span>
+                </button>
+            </div>
+            <div class="card-content">
+                <div class="news-list" id="newsList">
+                    <!-- News will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions Card -->
+        <div class="content-card actions-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <div class="card-icon">⚡</div>
+                    <h3>Quick Actions</h3>
+                </div>
+            </div>
+            <div class="card-content">
+                <div class="actions-grid">
+                    <button class="action-item" onclick="openProfiles()">
+                        <div class="action-icon">👤</div>
+                        <div class="action-label">Profiles</div>
+                    </button>
+                    <button class="action-item" onclick="openMods()">
+                        <div class="action-icon">🧩</div>
+                        <div class="action-label">Mods</div>
+                    </button>
+                    <button class="action-item" onclick="openSettings()">
+                        <div class="action-icon">⚙️</div>
+                        <div class="action-label">Settings</div>
+                    </button>
+                    <button class="action-item" onclick="openScreenshots()">
+                        <div class="action-icon">📸</div>
+                        <div class="action-label">Screenshots</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Launch Status Modal -->
+    <div class="launch-modal" id="launchModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Launching Minecraft</h3>
+            </div>
+            <div class="modal-body">
+                <div class="launch-progress">
+                    <div class="progress-ring">
+                        <svg viewBox="0 0 36 36">
+                            <circle cx="18" cy="18" r="16" fill="none" stroke="var(--win11-stroke)" stroke-width="2"/>
+                            <circle cx="18" cy="18" r="16" fill="none" stroke="var(--win11-accent)" stroke-width="2" 
+                                    stroke-dasharray="100" stroke-dashoffset="75" transform="rotate(-90 18 18)"/>
+                        </svg>
+                    </div>
+                    <div class="progress-text">
+                        <div class="progress-title" id="progressTitle">Preparing game...</div>
+                        <div class="progress-subtitle" id="progressSubtitle">This may take a moment</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.play-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    height: 100%;
+    overflow-y: auto;
+    padding: 0 24px 24px 24px;
+}
+
+/* Hero Section */
+.hero-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--win11-surface-elevated);
+    border: 1px solid var(--win11-stroke);
+    border-radius: var(--win11-radius-large);
+    padding: 32px;
+    margin-bottom: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, var(--win11-accent) 0%, transparent 70%);
+    opacity: 0.03;
+    pointer-events: none;
+}
+
+.hero-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.hero-text h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--win11-text-primary);
+    line-height: 1.2;
+}
+
+.hero-text p {
+    margin: 0;
+    font-size: 16px;
+    color: var(--win11-text-secondary);
+    line-height: 1.4;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.launch-button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border: none;
+    border-radius: var(--win11-radius-medium);
+    cursor: pointer;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: inherit;
+    text-align: left;
+    min-width: 180px;
+}
+
+.launch-button.primary {
+    background: var(--win11-accent);
+    color: var(--win11-accent-text, white);
+    box-shadow: var(--win11-shadow-elevation-low);
+}
+
+.launch-button.primary:hover {
+    background: var(--win11-accent-light);
+    transform: translateY(-2px);
+    box-shadow: var(--win11-shadow-elevation-medium);
+}
+
+.launch-button.secondary {
+    background: var(--win11-surface);
+    color: var(--win11-text-primary);
+    border: 1px solid var(--win11-stroke);
+}
+
+.launch-button.secondary:hover {
+    background: var(--win11-surface-alt);
+    border-color: var(--win11-accent);
+    transform: translateY(-1px);
+}
+
+.button-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.button-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.button-title {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.button-subtitle {
+    font-size: 12px;
+    opacity: 0.8;
+    line-height: 1.2;
+}
+
+.hero-visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-left: 24px;
+}
+
+.minecraft-logo {
+    font-size: 64px;
+    opacity: 0.6;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+}
+
+/* Content Grid */
+.content-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+.content-card {
+    background: var(--win11-surface-elevated);
+    border: 1px solid var(--win11-stroke);
+    border-radius: var(--win11-radius-large);
+    overflow: hidden;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.content-card:hover {
+    border-color: var(--win11-accent);
+    box-shadow: var(--win11-shadow-elevation-low);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 20px 16px 20px;
+    border-bottom: 1px solid var(--win11-stroke-subtle);
+}
+
+.card-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.card-icon {
+    font-size: 18px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--win11-accent);
+    color: var(--win11-accent-text, white);
+    border-radius: var(--win11-radius-small);
+    flex-shrink: 0;
+}
+
+.card-title h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--win11-text-primary);
+}
+
+.card-action {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid var(--win11-stroke);
+    border-radius: var(--win11-radius-small);
+    color: var(--win11-text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 12px;
+    font-family: inherit;
+}
+
+.card-action:hover {
+    background: var(--win11-surface-alt);
+    border-color: var(--win11-accent);
+    color: var(--win11-text-primary);
+}
+
+.action-icon {
+    font-size: 12px;
+}
+
+.card-content {
+    padding: 20px;
+}
+
+/* Worlds Card */
+.worlds-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.world-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--win11-surface);
+    border: 1px solid var(--win11-stroke-subtle);
+    border-radius: var(--win11-radius-medium);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.world-item:hover {
+    background: var(--win11-surface-alt);
+    border-color: var(--win11-stroke);
+}
+
+.world-thumbnail {
+    width: 40px;
+    height: 40px;
+    background: var(--win11-accent);
+    border-radius: var(--win11-radius-small);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: var(--win11-accent-text, white);
+    flex-shrink: 0;
+}
+
+.world-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.world-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--win11-text-primary);
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.world-meta {
+    font-size: 12px;
+    color: var(--win11-text-secondary);
+    display: flex;
+    gap: 8px;
+}
+
+.world-play {
+    width: 32px;
+    height: 32px;
+    background: var(--win11-accent);
+    border: none;
+    border-radius: var(--win11-radius-small);
+    color: var(--win11-accent-text, white);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.world-play:hover {
+    background: var(--win11-accent-light);
+    transform: scale(1.05);
+}
+
+.add-world-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    background: transparent;
+    border: 2px dashed var(--win11-stroke);
+    border-radius: var(--win11-radius-medium);
+    color: var(--win11-text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    width: 100%;
+}
+
+.add-world-button:hover {
+    border-color: var(--win11-accent);
+    color: var(--win11-accent);
+    background: rgba(var(--win11-accent-rgb, 0, 120, 212), 0.05);
+}
+
+.add-icon {
+    font-size: 16px;
+}
+
+/* Profile Card */
+.active-profile {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.profile-info {
+    padding: 16px;
+    background: var(--win11-surface);
+    border: 1px solid var(--win11-stroke-subtle);
+    border-radius: var(--win11-radius-medium);
+}
+
+.profile-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--win11-text-primary);
+    margin-bottom: 6px;
+}
+
+.profile-details {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.profile-version, .profile-type {
+    font-size: 12px;
+    color: var(--win11-text-secondary);
+    padding: 4px 8px;
+    background: var(--win11-surface-elevated);
+    border-radius: var(--win11-radius-small);
+}
+
+.profile-stats {
+    display: flex;
+    gap: 16px;
+}
+
+.stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--win11-text-secondary);
+}
+
+.stat-icon {
+    font-size: 14px;
+}
+
+/* News Card */
+.news-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.news-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    background: var(--win11-surface);
+    border: 1px solid var(--win11-stroke-subtle);
+    border-radius: var(--win11-radius-medium);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.news-item:hover {
+    background: var(--win11-surface-alt);
+    border-color: var(--win11-stroke);
+}
+
+.news-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--win11-accent);
+    border-radius: var(--win11-radius-small);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--win11-accent-text, white);
+    flex-shrink: 0;
+}
+
+.news-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.news-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--win11-text-primary);
+    margin-bottom: 4px;
+    line-height: 1.3;
+}
+
+.news-summary {
+    font-size: 12px;
+    color: var(--win11-text-secondary);
+    margin-bottom: 4px;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.news-date {
+    font-size: 11px;
+    color: var(--win11-text-tertiary);
+}
+
+/* Actions Card */
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.action-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 12px;
+    background: var(--win11-surface);
+    border: 1px solid var(--win11-stroke-subtle);
+    border-radius: var(--win11-radius-medium);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+    text-align: center;
+}
+
+.action-item:hover {
+    background: var(--win11-surface-alt);
+    border-color: var(--win11-accent);
+    transform: translateY(-2px);
+}
+
+.action-item .action-icon {
+    font-size: 20px;
+    width: 36px;
+    height: 36px;
+    background: var(--win11-accent);
+    color: var(--win11-accent-text, white);
+    border-radius: var(--win11-radius-small);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--win11-text-primary);
+}
+
+/* Launch Modal */
+.launch-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+}
+
+.modal-content {
+    background: var(--win11-surface-elevated);
+    border: 1px solid var(--win11-stroke);
+    border-radius: var(--win11-radius-large);
+    padding: 32px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: var(--win11-shadow-elevation-high);
+}
+
+.modal-header h3 {
+    margin: 0 0 24px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--win11-text-primary);
+    text-align: center;
+}
+
+.launch-progress {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.progress-ring {
+    width: 48px;
+    height: 48px;
+}
+
+.progress-ring svg {
+    width: 100%;
+    height: 100%;
+    animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.progress-text {
+    text-align: center;
+}
+
+.progress-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--win11-text-primary);
+    margin-bottom: 4px;
+}
+
+.progress-subtitle {
+    font-size: 12px;
+    color: var(--win11-text-secondary);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .play-container {
+        padding: 0 16px 16px 16px;
+        gap: 16px;
+    }
+    
+    .hero-section {
+        flex-direction: column;
+        text-align: center;
+        padding: 24px;
+        gap: 24px;
+    }
+    
+    .hero-visual {
+        margin-left: 0;
+    }
+    
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .actions-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .action-item {
+        padding: 12px 8px;
+    }
+    
+    .action-item .action-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
+    }
+    
+    .action-label {
+        font-size: 11px;
+    }
+}
+</style>
+
+<script>
+// Minecraft Play Screen Functions
+let currentWorlds = [];
+let currentNews = [];
+
+// Initialize play screen
+window.MinecraftPlay = {
+    initialize: function(authSession) {
+        console.log('Initializing Minecraft play screen');
+        loadWorlds();
+        loadNews();
+        updateActiveProfile();
+    }
+};
+
+function loadWorlds() {
+    // Mock worlds data - in real implementation this would come from Tauri backend
+    currentWorlds = [
+        {
+            id: 'creative-world',
+            name: 'Creative World',
+            icon: '🏰',
+            mode: 'Creative',
+            version: '1.21.3',
+            lastPlayed: '2 hours ago'
+        },
+        {
+            id: 'survival-base',
+            name: 'Survival Base',
+            icon: '⛏️',
+            mode: 'Survival',
+            version: '1.21.3',
+            lastPlayed: 'Yesterday'
+        },
+        {
+            id: 'redstone-lab',
+            name: 'Redstone Laboratory',
+            icon: '🔴',
+            mode: 'Creative',
+            version: '1.21.3',
+            lastPlayed: '3 days ago'
+        }
+    ];
+
+    renderWorlds();
+}
+
+function renderWorlds() {
+    const container = document.getElementById('worldsList');
+    container.innerHTML = '';
+    
+    currentWorlds.forEach(world => {
+        const worldItem = document.createElement('div');
+        worldItem.className = 'world-item';
+        worldItem.onclick = () => playWorld(world.id);
+        
+        worldItem.innerHTML = `
+            <div class="world-thumbnail">${world.icon}</div>
+            <div class="world-info">
+                <div class="world-name">${world.name}</div>
+                <div class="world-meta">
+                    <span>${world.mode}</span>
+                    <span>•</span>
+                    <span>${world.version}</span>
+                    <span>•</span>
+                    <span>${world.lastPlayed}</span>
+                </div>
+            </div>
+            <button class="world-play" onclick="event.stopPropagation(); playWorld('${world.id}')">▶️</button>
+        `;
+        
+        container.appendChild(worldItem);
+    });
+}
+
+function loadNews() {
+    // Mock news data
+    currentNews = [
+        {
+            id: 'update-1213',
+            icon: '🎉',
+            title: 'Minecraft 1.21.3 Released!',
+            summary: 'Bug fixes and performance improvements for a better gaming experience.',
+            date: '3 days ago'
+        },
+        {
+            id: 'launcher-update',
+            icon: '🛠️',
+            title: 'Mosaic Launcher Update',
+            summary: 'New Windows 11 UI design and improved performance.',
+            date: '1 week ago'
+        },
+        {
+            id: 'community-spotlight',
+            icon: '🌟',
+            title: 'Community Spotlight',
+            summary: 'Amazing builds and creations from our community.',
+            date: '2 weeks ago'
+        }
+    ];
+
+    renderNews();
+}
+
+function renderNews() {
+    const container = document.getElementById('newsList');
+    container.innerHTML = '';
+    
+    currentNews.forEach(news => {
+        const newsItem = document.createElement('div');
+        newsItem.className = 'news-item';
+        newsItem.onclick = () => openNewsItem(news.id);
+        
+        newsItem.innerHTML = `
+            <div class="news-icon">${news.icon}</div>
+            <div class="news-content">
+                <div class="news-title">${news.title}</div>
+                <div class="news-summary">${news.summary}</div>
+                <div class="news-date">${news.date}</div>
+            </div>
+        `;
+        
+        container.appendChild(newsItem);
+    });
+}
+
+function updateActiveProfile() {
+    // This would be updated based on actual profile data
+    console.log('Active profile updated');
+}
+
+// Action functions
+function quickLaunch() {
+    console.log('Quick launching Minecraft...');
+    showLaunchModal();
+    simulateLaunch();
+}
+
+function showVersionSelector() {
+    console.log('Opening version selector...');
+    if (window.MosaicLauncher) {
+        window.MosaicLauncher.showToast('Version selector coming soon!');
+    }
+}
+
+function playWorld(worldId) {
+    console.log('Playing world:', worldId);
+    showLaunchModal();
+    simulateLaunch();
+}
+
+function createNewWorld() {
+    console.log('Creating new world...');
+    if (window.MosaicLauncher) {
+        window.MosaicLauncher.showToast('World creation coming soon!');
+    }
+}
+
+function refreshWorlds() {
+    console.log('Refreshing worlds...');
+    loadWorlds();
+    if (window.MosaicLauncher) {
+        window.MosaicLauncher.showToast('Worlds refreshed');
+    }
+}
+
+function openProfiles() {
+    console.log('Opening profiles...');
+    if (window.showContent) {
+        window.showContent('profiles');
+    }
+}
+
+function openMods() {
+    console.log('Opening mods...');
+    if (window.showContent) {
+        window.showContent('mods');
+    }
+}
+
+function openSettings() {
+    console.log('Opening settings...');
+    if (window.showContent) {
+        window.showContent('settings');
+    }
+}
+
+function openScreenshots() {
+    console.log('Opening screenshots...');
+    if (window.MosaicLauncher) {
+        window.MosaicLauncher.showToast('Screenshots viewer coming soon!');
+    }
+}
+
+function openNewsCenter() {
+    console.log('Opening news center...');
+    if (window.MosaicLauncher) {
+        window.MosaicLauncher.showToast('News center coming soon!');
+    }
+}
+
+function openNewsItem(newsId) {
+    console.log('Opening news item:', newsId);
+    if (window.MosaicLauncher) {
+        window.MosaicLauncher.showToast('News article coming soon!');
+    }
+}
+
+function showLaunchModal() {
+    const modal = document.getElementById('launchModal');
+    modal.style.display = 'flex';
+}
+
+function hideLaunchModal() {
+    const modal = document.getElementById('launchModal');
+    modal.style.display = 'none';
+}
+
+function simulateLaunch() {
+    const progressTitle = document.getElementById('progressTitle');
+    const progressSubtitle = document.getElementById('progressSubtitle');
+    
+    const steps = [
+        { title: 'Preparing game...', subtitle: 'Initializing launcher' },
+        { title: 'Downloading assets...', subtitle: 'This may take a moment' },
+        { title: 'Verifying files...', subtitle: 'Checking game integrity' },
+        { title: 'Starting game...', subtitle: 'Almost ready!' }
+    ];
+    
+    let currentStep = 0;
+    
+    const updateProgress = () => {
+        if (currentStep < steps.length) {
+            progressTitle.textContent = steps[currentStep].title;
+            progressSubtitle.textContent = steps[currentStep].subtitle;
+            currentStep++;
+            setTimeout(updateProgress, 1500);
+        } else {
+            hideLaunchModal();
+            if (window.MosaicLauncher) {
+                window.MosaicLauncher.showToast('Minecraft launched successfully!');
+            }
+        }
+    };
+    
+    updateProgress();
+}
+
+// Initialize when loaded
+console.log('Minecraft Play screen loaded');
+</script> 

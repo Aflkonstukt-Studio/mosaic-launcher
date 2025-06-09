@@ -1767,6 +1767,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "mosaic-launcher"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-shell",
+ "uuid",
+]
+
+[[package]]
 name = "muda"
 version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4067,17 +4079,6 @@ dependencies = [
  "thiserror 2.0.12",
  "windows",
  "windows-core",
-]
-
-[[package]]
-name = "win"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-shell",
 ]
 
 [[package]]
