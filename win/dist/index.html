@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mosaic Launcher</title>
+    <script type="module" src="https://unpkg.com/@fluentui/web-components@2.5.16/dist/web-components.js"></script>
+    <script type="module" src="https://unpkg.com/@fluentui/web-components@2.5.16/dist/fluent-design-tokens.js"></script>
+    <style>
+        /* Force dark theme initially and detect properly */
+        :root {
+            --system-accent-color: #0067C0;
+            --system-accent-light1: #4CC2FF;
+            --system-accent-light2: #99EBFF;
+            --system-accent-dark1: #004C87;
+            --system-accent-dark2: #003A75;
+            
+            /* Default to dark theme - will be overridden */
+            --mica-base: rgba(32, 32, 32, 0.70);
+            --mica-alt: rgba(0, 0, 0, 0.30);
+            --surface: rgba(45, 45, 45, 0.85);
+            --surface-variant: rgba(55, 55, 55, 0.85);
+            --card-background: rgba(255, 255, 255, 0.08);
+            --card-hover: rgba(255, 255, 255, 0.12);
+            --text-primary: #FFFFFF;
+            --text-secondary: rgba(255, 255, 255, 0.786);
+            --text-tertiary: rgba(255, 255, 255, 0.544);
+            --stroke-surface: rgba(255, 255, 255, 0.08);
+            --stroke-card: rgba(255, 255, 255, 0.12);
+            --stroke-focus: var(--system-accent-light1);
+            --elevation-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+            --elevation-border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Light theme override */
+        :root[data-theme="light"] {
+            --mica-base: rgba(243, 243, 243, 0.70);
+            --mica-alt: rgba(249, 249, 249, 0.60);
+            --surface: rgba(255, 255, 255, 0.85);
+            --surface-variant: rgba(250, 250, 250, 0.85);
+            --card-background: rgba(255, 255, 255, 0.70);
+            --card-hover: rgba(0, 0, 0, 0.06);
+            --text-primary: #000000;
+            --text-secondary: rgba(0, 0, 0, 0.6);
+            --text-tertiary: rgba(0, 0, 0, 0.45);
+            --stroke-surface: rgba(0, 0, 0, 0.08);
+            --stroke-card: rgba(0, 0, 0, 0.12);
+            --stroke-focus: var(--system-accent-color);
+            --elevation-shadow: 0 4px 8px rgba(0, 0, 0, 0.16);
+            --elevation-border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: transparent;
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            position: relative;
+            background: var(--mica-base);
+            backdrop-filter: blur(80px) saturate(125%);
+            -webkit-backdrop-filter: blur(80px) saturate(125%);
+        }
+
+        /* Enhanced Mica background effect */
+        .app-container::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(120, 119, 198, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 119, 198, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 198, 120, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .title-bar {
+            height: 48px;
+            background: var(--mica-alt);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-app-region: drag;
+            border-bottom: var(--elevation-border);
+            backdrop-filter: blur(50px) saturate(180%);
+            -webkit-backdrop-filter: blur(50px) saturate(180%);
+            position: relative;
+            z-index: 100;
+        }
+
+        .title-bar span {
+            font-size: 12px;
+            font-weight: 400;
+            color: var(--text-secondary);
+            letter-spacing: 0.25px;
+        }
+
+        .content-area {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Game Selection Screen */
+        .game-selection {
+            display: flex;
+            flex-direction: column;
+            padding: 80px 60px;
+            height: 100%;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background: var(--surface);
+            backdrop-filter: blur(40px) saturate(150%);
+            -webkit-backdrop-filter: blur(40px) saturate(150%);
+        }
+
+        .game-selection h1 {
+            margin-bottom: 12px;
+            font-size: 32px;
+            font-weight: 300;
+            color: var(--text-primary);
+            text-align: center;
+            letter-spacing: -0.25px;
+        }
+
+        .game-selection p {
+            margin-bottom: 48px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-align: center;
+            font-weight: 400;
+        }
+
+        .game-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 400px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .game-card {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            background: var(--card-background);
+            border: var(--elevation-border);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--card-hover);
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            pointer-events: none;
+        }
+
+        .game-card:hover {
+            background: var(--card-background);
+            border-color: var(--stroke-focus);
+            transform: translateY(-1px);
+            box-shadow: var(--elevation-shadow);
+        }
+
+        .game-card:hover::before {
+            opacity: 1;
+        }
+
+        .game-card:active {
+            transform: translateY(0px);
+            transition: transform 0.05s ease;
+        }
+
+        .game-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            background: linear-gradient(135deg, var(--system-accent-color), var(--system-accent-light1));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 16px;
+            font-size: 20px;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+        }
+
+        .game-info {
+            flex: 1;
+        }
+
+        .game-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 2px;
+            color: var(--text-primary);
+        }
+
+        .game-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .game-arrow {
+            font-size: 14px;
+            color: var(--text-tertiary);
+            transition: transform 0.15s ease;
+        }
+
+        .game-card:hover .game-arrow {
+            transform: translateX(2px);
+            color: var(--system-accent-color);
+        }
+
+        /* Minecraft Plugin Styles */
+        .minecraft-container {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+        }
+
+        .minecraft-header {
+            background: var(--mica-alt);
+            padding: 12px 24px;
+            border-bottom: var(--elevation-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(50px) saturate(180%);
+            -webkit-backdrop-filter: blur(50px) saturate(180%);
+            position: relative;
+            z-index: 10;
+        }
+
+        .minecraft-title {
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-primary);
+        }
+
+        .back-button {
+            background: var(--card-background);
+            border: var(--elevation-border);
+            color: var(--text-primary);
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.15s ease;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .back-button:hover {
+            background: var(--card-hover);
+            border-color: var(--stroke-focus);
+        }
+
+        .minecraft-content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Login Screen */
+        .login-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px;
+            text-align: center;
+            height: 100%;
+            width: 100%;
+            position: relative;
+            background: var(--surface);
+            backdrop-filter: blur(40px) saturate(150%);
+            -webkit-backdrop-filter: blur(40px) saturate(150%);
+        }
+
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--system-accent-color), var(--system-accent-light1));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: white;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .login-title {
+            font-size: 24px;
+            font-weight: 300;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            letter-spacing: -0.25px;
+        }
+
+        .login-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            max-width: 400px;
+            line-height: 1.4;
+            font-weight: 400;
+        }
+
+        .login-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 280px;
+        }
+
+        /* Windows 11 Style Buttons */
+        .win-button {
+            height: 32px;
+            border-radius: 4px;
+            border: var(--elevation-border);
+            background: var(--card-background);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 400;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            position: relative;
+            overflow: hidden;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        .win-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--card-hover);
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+        .win-button:hover {
+            border-color: var(--stroke-focus);
+        }
+
+        .win-button:hover::before {
+            opacity: 1;
+        }
+
+        .win-button.accent {
+            background: var(--system-accent-color);
+            border-color: var(--system-accent-color);
+            color: white;
+        }
+
+        .win-button.accent:hover {
+            background: var(--system-accent-dark1);
+            border-color: var(--system-accent-dark1);
+        }
+
+        .win-button.accent::before {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Main Interface */
+        .main-interface {
+            display: none;
+            flex: 1;
+            position: relative;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: var(--mica-alt);
+            border-right: var(--elevation-border);
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(50px) saturate(180%);
+            -webkit-backdrop-filter: blur(50px) saturate(180%);
+            position: relative;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: var(--elevation-border);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--system-accent-color), var(--system-accent-light1));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .user-details h3 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .user-details p {
+            margin: 2px 0 0 0;
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .nav-list {
+            flex: 1;
+            padding: 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border: none;
+            width: 100%;
+            text-align: left;
+            background: none;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 400;
+            border-radius: 4px;
+            margin-bottom: 2px;
+            position: relative;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--card-hover);
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            border-radius: 4px;
+        }
+
+        .nav-item:hover::before {
+            opacity: 1;
+        }
+
+        .nav-item.active {
+            background: var(--system-accent-color);
+            color: white;
+        }
+
+        .nav-item.active::before {
+            opacity: 0;
+        }
+
+        .nav-item span:first-child {
+            margin-right: 12px;
+            font-size: 16px;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--surface);
+            backdrop-filter: blur(40px) saturate(150%);
+            -webkit-backdrop-filter: blur(40px) saturate(150%);
+        }
+
+        .content-header {
+            padding: 20px 24px 16px 24px;
+            border-bottom: var(--elevation-border);
+        }
+
+        .content-header h2 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .content-body {
+            flex: 1;
+            padding: 20px 24px;
+            overflow-y: auto;
+        }
+
+        .placeholder-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            color: var(--text-tertiary);
+        }
+
+        .placeholder-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.6;
+        }
+
+        .placeholder-content h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-secondary);
+        }
+
+        .placeholder-content p {
+            font-size: 12px;
+            margin: 0;
+            max-width: 250px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Form styles */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.25px;
+        }
+
+        .form-control {
+            width: 100%;
+            height: 32px;
+            padding: 0 12px;
+            background: var(--card-background);
+            border: var(--elevation-border);
+            border-radius: 4px;
+            font-size: 14px;
+            color: var(--text-primary);
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            transition: all 0.15s ease;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--stroke-focus);
+            box-shadow: 0 0 0 1px var(--stroke-focus);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--stroke-surface);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-tertiary);
+        }
+
+        /* Focus styles */
+        .game-card:focus-visible,
+        .nav-item:focus-visible,
+        .win-button:focus-visible,
+        .back-button:focus-visible {
+            outline: 2px solid var(--stroke-focus);
+            outline-offset: 1px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="title-bar">
+            <span>Mosaic Launcher</span>
+        </div>
+        
+        <div class="content-area">
+            <!-- Game Selection Screen -->
+            <div id="gameSelection" class="game-selection">
+                <h1>Mosaic Launcher</h1>
+                <p>Select a game to launch</p>
+                
+                <div class="game-list">
+                    <div class="game-card" onclick="selectGame('minecraft')" tabindex="0" onkeydown="handleKeyDown(event, () => selectGame('minecraft'))">
+                        <div class="game-icon">⛏️</div>
+                        <div class="game-info">
+                            <div class="game-title">Minecraft</div>
+                            <div class="game-subtitle">Official Minecraft with mod support</div>
+                        </div>
+                        <div class="game-arrow">→</div>
+                    </div>
+                    
+                    <div class="game-card" onclick="showAddGameDialog()" tabindex="0" onkeydown="handleKeyDown(event, showAddGameDialog)">
+                        <div class="game-icon">➕</div>
+                        <div class="game-info">
+                            <div class="game-title">Add Custom Game</div>
+                            <div class="game-subtitle">Add your own game or application</div>
+                        </div>
+                        <div class="game-arrow">→</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Minecraft Plugin Container -->
+            <div id="minecraftContainer" class="minecraft-container">
+                <div class="minecraft-header">
+                    <div class="minecraft-title">
+                        <span>⛏️</span>
+                        <span>Minecraft</span>
+                    </div>
+                    <button class="back-button" onclick="backToGameSelection()">
+                        <span>←</span>
+                        <span>Back to Games</span>
+                    </button>
+                </div>
+                
+                <div class="minecraft-content">
+                    <!-- Login Screen -->
+                    <div id="loginScreen" class="login-screen">
+                        <div class="login-logo">⛏️</div>
+                        <h2 class="login-title">Minecraft</h2>
+                        <p class="login-subtitle">
+                            Sign in with your Microsoft account to play Minecraft and access your worlds, skins, and marketplace content.
+                        </p>
+                        
+                        <div class="login-actions">
+                            <button class="win-button accent" onclick="microsoftLogin()">
+                                <span>Sign in with Microsoft</span>
+                            </button>
+                            
+                            <button class="win-button" onclick="offlineLogin()">
+                                <span>Play Offline</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Main Interface -->
+                    <div id="mainInterface" class="main-interface">
+                        <div class="sidebar">
+                            <div class="sidebar-header">
+                                <div class="user-info">
+                                    <div class="user-avatar">S</div>
+                                    <div class="user-details">
+                                        <h3>Steve</h3>
+                                        <p>Minecraft Player</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="nav-list">
+                                <button class="nav-item active" onclick="showContent('play')">
+                                    <span>▶️</span>
+                                    <span>Play</span>
+                                </button>
+                                
+                                <button class="nav-item" onclick="showContent('profiles')">
+                                    <span>👤</span>
+                                    <span>Profiles</span>
+                                </button>
+                                
+                                <button class="nav-item" onclick="showContent('mods')">
+                                    <span>🧩</span>
+                                    <span>Mods</span>
+                                </button>
+                                
+                                <button class="nav-item" onclick="showContent('settings')">
+                                    <span>⚙️</span>
+                                    <span>Settings</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="main-content">
+                            <div class="content-header">
+                                <h2 id="contentTitle">Play</h2>
+                            </div>
+                            
+                            <div class="content-body">
+                                <div id="playContent" class="content-panel">
+                                    <div class="form-group">
+                                        <label class="form-label">Version</label>
+                                        <select class="form-control">
+                                            <option>1.20.4 (Latest Release)</option>
+                                            <option>1.20.4-forge-49.0.31</option>
+                                            <option>1.20.1</option>
+                                            <option>1.19.4</option>
+                                            <option>1.12.2</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label">Profile</label>
+                                        <select class="form-control">
+                                            <option>Default</option>
+                                            <option>Modded</option>
+                                            <option>Creative</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <button class="win-button accent" style="width: 180px; height: 36px;">
+                                            <span>▶️</span>
+                                            <span>Launch Minecraft</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div id="profilesContent" class="content-panel hidden">
+                                    <div class="placeholder-content">
+                                        <div class="placeholder-icon">👤</div>
+                                        <h3>Profiles</h3>
+                                        <p>Manage your Minecraft profiles and installations</p>
+                                    </div>
+                                </div>
+                                
+                                <div id="modsContent" class="content-panel hidden">
+                                    <div class="placeholder-content">
+                                        <div class="placeholder-icon">🧩</div>
+                                        <h3>Mods</h3>
+                                        <p>Browse and install mods for your Minecraft experience</p>
+                                    </div>
+                                </div>
+                                
+                                <div id="settingsContent" class="content-panel hidden">
+                                    <div class="placeholder-content">
+                                        <div class="placeholder-icon">⚙️</div>
+                                        <h3>Settings</h3>
+                                        <p>Configure launcher and game settings</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { invoke } = window.__TAURI__.tauri;
+
+        // Proper Windows theme detection
+        function detectSystemTheme() {
+            // Check if Windows is in dark mode
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            // Apply theme immediately
+            if (prefersDark) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                console.log('Applied dark theme');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+                console.log('Applied light theme');
+            }
+
+            // Listen for theme changes
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (e.matches) {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    console.log('Switched to dark theme');
+                } else {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                    console.log('Switched to light theme');
+                }
+            });
+
+            // Try to get Windows accent color (future implementation)
+            tryGetWindowsAccentColor();
+        }
+
+        async function tryGetWindowsAccentColor() {
+            try {
+                // This would be a future Tauri command to get Windows accent color
+                // const accentColor = await invoke('get_windows_accent_color');
+                // document.documentElement.style.setProperty('--system-accent-color', accentColor);
+                
+                // For now, detect some common Windows accent colors
+                const testColors = [
+                    '#0078D4', // Default Windows Blue
+                    '#0063B1', // Dark Blue
+                    '#8E8CD8', // Purple
+                    '#6B69D6', // Violet
+                    '#744DA9', // Dark Purple
+                    '#881798', // Orchid
+                    '#C239B3', // Pink
+                    '#E74856', // Red
+                    '#EE1111', // Bright Red
+                    '#FF8C00', // Orange
+                    '#FF8C00', // Gold
+                    '#107C10', // Green
+                    '#00B7C3', // Teal
+                ];
+                
+                // Use default for now
+                console.log('Using default Windows accent color');
+            } catch (error) {
+                console.log('Using fallback accent color');
+            }
+        }
+
+        // Keyboard navigation
+        function handleKeyDown(event, callback) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                callback();
+            }
+        }
+
+        // Game selection functions
+        function selectGame(gameId) {
+            if (gameId === 'minecraft') {
+                document.getElementById('gameSelection').style.display = 'none';
+                document.getElementById('minecraftContainer').style.display = 'flex';
+            }
+        }
+
+        function backToGameSelection() {
+            document.getElementById('minecraftContainer').style.display = 'none';
+            document.getElementById('gameSelection').style.display = 'flex';
+            
+            // Reset to login screen
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('mainInterface').style.display = 'none';
+        }
+
+        function showAddGameDialog() {
+            alert('Add Custom Game functionality coming soon!');
+        }
+
+        // Authentication functions
+        async function microsoftLogin() {
+            try {
+                const result = await invoke('microsoft_login');
+                console.log('Microsoft login result:', result);
+                
+                // Simulate successful login
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('mainInterface').style.display = 'flex';
+                
+                // Update user info
+                document.querySelector('.user-details h3').textContent = 'Player123';
+                document.querySelector('.user-details p').textContent = 'Microsoft Account';
+                document.querySelector('.user-avatar').textContent = 'P';
+            } catch (error) {
+                console.error('Login failed:', error);
+            }
+        }
+
+        async function offlineLogin() {
+            try {
+                const result = await invoke('offline_login');
+                console.log('Offline login result:', result);
+                
+                // Show main interface
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('mainInterface').style.display = 'flex';
+                
+                // Update user info for offline mode
+                document.querySelector('.user-details h3').textContent = 'Player';
+                document.querySelector('.user-details p').textContent = 'Offline Mode';
+                document.querySelector('.user-avatar').textContent = 'P';
+            } catch (error) {
+                console.error('Offline login failed:', error);
+            }
+        }
+
+        // Navigation functions
+        function showContent(contentId) {
+            // Update active navigation item
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Find the button that was clicked
+            const clickedButton = Array.from(document.querySelectorAll('.nav-item')).find(item => 
+                item.onclick && item.onclick.toString().includes(contentId)
+            );
+            if (clickedButton) {
+                clickedButton.classList.add('active');
+            }
+            
+            // Hide all content panels
+            document.querySelectorAll('.content-panel').forEach(panel => {
+                panel.classList.add('hidden');
+            });
+            
+            // Show selected content
+            document.getElementById(contentId + 'Content').classList.remove('hidden');
+            
+            // Update header title
+            const titles = {
+                'play': 'Play',
+                'profiles': 'Profiles', 
+                'mods': 'Mods',
+                'settings': 'Settings'
+            };
+            document.getElementById('contentTitle').textContent = titles[contentId];
+        }
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Mosaic Launcher initialized');
+            detectSystemTheme();
+            
+            // Force theme detection after a short delay to ensure it's applied
+            setTimeout(detectSystemTheme, 100);
+        });
+    </script>
+</body>
+</html> 

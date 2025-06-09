@@ -5,6 +5,14 @@ edition = "2021"
 authors = ["Mosaic Launcher Team"]
 description = "A modern, cross-platform Minecraft launcher with mod management features"
 
+[lib]
+name = "mosaic_launcher"
+path = "src/lib.rs"
+
+[[bin]]
+name = "mosaic-launcher"
+path = "src/main.rs"
+
 [dependencies]
 # GUI
 gtk4 = { version = "0.7", features = ["v4_10"] }

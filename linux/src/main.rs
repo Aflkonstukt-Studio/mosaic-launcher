@@ -1,13 +1,7 @@
-mod games;
-mod ui;
-mod file_manager;
-mod config;
-mod utils;
-mod mods;
-
 use anyhow::Result;
 use log::{info, error};
-use crate::ui::MosaicApp;
+use mosaic_launcher::config;
+use mosaic_launcher::ui::MosaicApp;
 
 fn main() -> Result<()> {
     // Initialize logger
